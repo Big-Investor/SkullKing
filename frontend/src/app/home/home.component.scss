@@ -1,0 +1,78 @@
+.home {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+
+  .skull {
+    font-size: 2rem;
+  }
+
+  h1 {
+    font-size: 1.9rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+}
+
+.subtitle {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.full-width {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 0.95rem;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+}
+
+.join-row {
+  display: flex;
+  gap: 0.5rem;
+
+  input {
+    flex: 1;
+    font-family: monospace;
+    font-size: 0.95rem;
+    letter-spacing: 0.04em;
+  }
+}

@@ -1,0 +1,111 @@
+@switch (state) {
+  @case ('loading') {
+    <div class="center-screen">
+      <div class="spinner"></div>
+      <p>Raum wird geprüft...</p>
+    </div>
+  }
+
+  @case ('error') {
+    <div class="center-screen">
+      <div class="error-card">
+        <span class="error-icon">⚠</span>
+        <h2>Fehler</h2>
+        <p>{{ errorMessage }}</p>
+        <p class="redirect-hint">Weiterleitung zur Startseite...</p>
+      </div>
+    </div>
+  }
+
+  @case ('name-prompt') {
+    <div class="overlay">
+      <div class="prompt-card">
+        <div class="prompt-logo">☠ Skull King</div>
+        <h2>Raum beitreten</h2>
+        <p class="room-code">Raum-ID: <code>{{ roomId }}</code></p>
+        <p class="hint">Wähle einen Namen, um dem Raum beizutreten.</p>
+        <input
+          type="text"
+          placeholder="Dein Name"
+          [(ngModel)]="nameInput"
+          (keyup.enter)="submitName()"
+          maxlength="20"
+          autocomplete="off"
+          autofocus
+        />
+        <button class="btn-primary full-width" (click)="submitName()" [disabled]="!nameInput.trim()">
+          Beitreten
+        </button>
+        <a routerLink="/" class="back-link">← Zurück zur Startseite</a>
+      </div>
+    </div>
+  }
+
+  @case ('joining') {
+    <div class="center-screen">
+      <div class="spinner"></div>
+      <p>Trete dem Raum bei...</p>
+    </div>
+  }
+
+  @case ('chat') {
+    <div class="chat-layout">
+      <header class="chat-header">
+        <div class="header-left">
+          <span class="room-title">☠ <code>{{ roomId }}</code></span>
+        </div>
+        <div class="header-right">
+          <button class="players-btn btn-ghost" (click)="showPlayerList = !showPlayerList">
+            <span class="players-icon">👥</span>
+            <span>{{ players.length }}</span>
+          </button>
+          <button class="leave-btn btn-ghost" (click)="leaveRoom()">Verlassen</button>
+        </div>
+      </header>
+
+      @if (showPlayerList) {
+        <div class="players-panel">
+          <h3>Spieler im Raum</h3>
+          <ul>
+            @for (p of players; track p) {
+              <li [class.me]="p === playerName">
+                {{ p }}@if (p === playerName) { <span class="you-tag"> (Du)</span> }
+              </li>
+            }
+          </ul>
+        </div>
+      }
+
+      <div class="messages">
+        @for (msg of messages; track $index) {
+          @if (msg.isSystem) {
+            <div class="system-msg">{{ msg.message }}</div>
+          } @else {
+            <div class="message" [class.own]="msg.playerName === playerName">
+              <span class="msg-meta">
+                <span class="msg-author">{{ msg.playerName }}</span>
+                <span class="msg-time">{{ msg.timestamp | date: 'HH:mm' }}</span>
+              </span>
+              <div class="msg-bubble">{{ msg.message }}</div>
+            </div>
+          }
+        }
+        <div #messagesEnd></div>
+      </div>
+
+      <div class="chat-input">
+        <input
+          type="text"
+          placeholder="Nachricht schreiben..."
+          [(ngModel)]="messageInput"
+          (keyup.enter)="sendMessage()"
+          maxlength="500"
+          autocomplete="off"
+        />
+        <button class="btn-primary send-btn" (click)="sendMessage()" [disabled]="!messageInput.trim()">
+          &#10148;
+        </button>
+      </div>
+    </div>
+  }
+}

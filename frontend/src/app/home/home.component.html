@@ -1,0 +1,34 @@
+<div class="home">
+  <div class="card">
+    <div class="logo">
+      <span class="skull">☠</span>
+      <h1>Skull King</h1>
+    </div>
+    <p class="subtitle">Erstelle einen neuen Raum oder tritt einem bestehenden bei.</p>
+
+    @if (error) {
+      <div class="alert alert-error">{{ error }}</div>
+    }
+
+    <button class="btn-primary full-width" (click)="createRoom()" [disabled]="loading">
+      @if (loading) { Erstelle Raum... } @else { Neuen Raum erstellen }
+    </button>
+
+    <div class="divider"><span>oder</span></div>
+
+    <div class="join-row">
+      <input
+        type="text"
+        placeholder="Raum-ID eingeben"
+        [(ngModel)]="joinCode"
+        (keyup.enter)="joinRoom()"
+        maxlength="8"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <button class="btn-ghost" (click)="joinRoom()" [disabled]="!joinCode.trim()">
+        Beitreten
+      </button>
+    </div>
+  </div>
+</div>

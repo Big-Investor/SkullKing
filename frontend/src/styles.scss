@@ -1,0 +1,121 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg: #0f0f13;
+  --surface: #1a1a24;
+  --surface-elevated: #242433;
+  --border: #2a2a3a;
+  --primary: #7c6aff;
+  --primary-hover: #9180ff;
+  --primary-dim: rgba(124, 106, 255, 0.15);
+  --text: #e0e0f0;
+  --text-muted: #888899;
+  --error: #f87171;
+  --success: #4ade80;
+}
+
+html,
+body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+input,
+button,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  outline: none;
+  transition: background 0.15s, opacity 0.15s, transform 0.1s;
+
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+  padding: 0.6rem 1.4rem;
+  border-radius: 8px;
+  font-weight: 600;
+
+  &:hover:not(:disabled) {
+    background: var(--primary-hover);
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text);
+  padding: 0.6rem 1.4rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-weight: 500;
+
+  &:hover:not(:disabled) {
+    background: var(--surface-elevated);
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+input[type='text'] {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 0.6rem 0.9rem;
+  outline: none;
+  transition: border-color 0.15s;
+
+  &::placeholder {
+    color: var(--text-muted);
+  }
+
+  &:focus {
+    border-color: var(--primary);
+  }
+}
+
+.alert {
+  padding: 0.7rem 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+
+  &.alert-error {
+    background: rgba(248, 113, 113, 0.1);
+    border: 1px solid rgba(248, 113, 113, 0.3);
+    color: var(--error);
+  }
+}
+
+a {
+  color: inherit;
+}
