@@ -6,12 +6,49 @@
     </div>
     <p class="subtitle">Erstelle einen neuen Raum oder tritt einem bestehenden bei.</p>
 
+    <div class="input-group">
+      <input 
+        type="text" 
+        placeholder="Dein Piratenname" 
+        [(ngModel)]="username" 
+        maxlength="15"
+        class="name-input"
+      />
+    </div>
+
     @if (error) {
       <div class="alert alert-error">{{ error }}</div>
     }
 
-    <button class="btn-primary full-width" (click)="createRoom()" [disabled]="loading">
-      @if (loading) { Erstelle Raum... } @else { Neuen Raum erstellen }
+    <!-- Bot Options -->
+    <div class="bot-options">
+      <label class="checkbox-label">
+        <input type="checkbox" [(ngModel)]="withBots">
+        <span>Gegen Bots spielen?</span>
+      </label>
+
+      @if (withBots) {
+        <div class="bot-settings">
+          <div class="setting-row">
+             <label>Anzahl Bots: {{ botCount }}</label>
+             <input type="range" min="1" max="5" [(ngModel)]="botCount">
+          </div>
+          <div class="setting-row">
+             <label>Schwierigkeit:</label>
+             <select [(ngModel)]="difficulty">
+                 <option value="easy">Leicht</option>
+                 <option value="medium">Mittel</option>
+                 <option value="hard">Schwer</option>
+             </select>
+          </div>
+        </div>
+      }
+    </div>
+
+    <button class="btn-primary full-width" (click)="createRoom()" [disabled]="loading || !isValidName()">
+      @if (loading) { Läd... } @else { 
+          @if (withBots) { Spiel mit Bots starten } @else { Neuen Raum erstellen }
+      }
     </button>
 
     <div class="divider"><span>oder</span></div>
@@ -19,14 +56,15 @@
     <div class="join-row">
       <input
         type="text"
-        placeholder="Raum-ID eingeben"
+        placeholder="Raum-ID"
         [(ngModel)]="joinCode"
         (keyup.enter)="joinRoom()"
         maxlength="8"
+        class="code-input"
         autocomplete="off"
         spellcheck="false"
       />
-      <button class="btn-ghost" (click)="joinRoom()" [disabled]="!joinCode.trim()">
+      <button class="btn-ghost" (click)="joinRoom()" [disabled]="!joinCode.trim() || !isValidName()">
         Beitreten
       </button>
     </div>

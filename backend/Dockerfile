@@ -20,13 +20,15 @@ WORKDIR /app
 COPY backend/package*.json ./
 RUN npm ci --omit=dev
 
-# Copy the Express server
-COPY backend/server.js ./
+# Copy the rest of the backend source code (including classes/)
+COPY backend/ ./
 
 # Copy the Angular build output from the builder stage.
 # Angular 17 application-builder puts browser assets in dist/skullking/browser/.
 COPY --from=builder /app/frontend/dist/skullking/browser ./dist/browser
 
 EXPOSE 3000
+
+CMD ["node", "server.js"]
 
 CMD ["node", "server.js"]

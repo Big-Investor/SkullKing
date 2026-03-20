@@ -1,111 +1,201 @@
-@switch (state) {
-  @case ('loading') {
-    <div class="center-screen">
-      <div class="spinner"></div>
-      <p>Raum wird geprüft...</p>
-    </div>
-  }
+<div class="game-container" *ngIf="gameState">
 
-  @case ('error') {
-    <div class="center-screen">
-      <div class="error-card">
-        <span class="error-icon">⚠</span>
-        <h2>Fehler</h2>
-        <p>{{ errorMessage }}</p>
-        <p class="redirect-hint">Weiterleitung zur Startseite...</p>
-      </div>
+    <!-- Notifications -->
+    <div class="notifications">
+        <div *ngFor="let n of notifications" class="toast">{{ n }}</div>
+        <div *ngIf="error" class="toast error">{{ error }}</div>
     </div>
-  }
-
-  @case ('name-prompt') {
-    <div class="overlay">
-      <div class="prompt-card">
-        <div class="prompt-logo">☠ Skull King</div>
-        <h2>Raum beitreten</h2>
-        <p class="room-code">Raum-ID: <code>{{ roomId }}</code></p>
-        <p class="hint">Wähle einen Namen, um dem Raum beizutreten.</p>
-        <input
-          type="text"
-          placeholder="Dein Name"
-          [(ngModel)]="nameInput"
-          (keyup.enter)="submitName()"
-          maxlength="20"
-          autocomplete="off"
-          autofocus
-        />
-        <button class="btn-primary full-width" (click)="submitName()" [disabled]="!nameInput.trim()">
-          Beitreten
-        </button>
-        <a routerLink="/" class="back-link">← Zurück zur Startseite</a>
-      </div>
-    </div>
-  }
-
-  @case ('joining') {
-    <div class="center-screen">
-      <div class="spinner"></div>
-      <p>Trete dem Raum bei...</p>
-    </div>
-  }
-
-  @case ('chat') {
-    <div class="chat-layout">
-      <header class="chat-header">
-        <div class="header-left">
-          <span class="room-title">☠ <code>{{ roomId }}</code></span>
+    
+    <!-- Header / HUD -->
+    <div class="hud">
+        <div class="round-info">
+            <h2>Runde {{ gameState.round }} / {{ gameState.maxRounds }}</h2>
+            <span class="phase-badge">{{ gameState.phase }}</span>
+            <button (click)="showHelp = !showHelp" class="btn-help" title="Karten-Erklärung">❓</button>
         </div>
-        <div class="header-right">
-          <button class="players-btn btn-ghost" (click)="showPlayerList = !showPlayerList">
-            <span class="players-icon">👥</span>
-            <span>{{ players.length }}</span>
-          </button>
-          <button class="leave-btn btn-ghost" (click)="leaveRoom()">Verlassen</button>
+        <div class="scores" *ngIf="gameState.me">
+            Dein Score: {{ gameState.me.score }} | Gewonnene Stiche: {{ gameState.me.tricksWon }} / {{ gameState.me.bid !== null ? gameState.me.bid : '?' }}
         </div>
-      </header>
+    </div>
 
-      @if (showPlayerList) {
-        <div class="players-panel">
-          <h3>Spieler im Raum</h3>
-          <ul>
-            @for (p of players; track p) {
-              <li [class.me]="p === playerName">
-                {{ p }}@if (p === playerName) { <span class="you-tag"> (Du)</span> }
-              </li>
-            }
-          </ul>
-        </div>
-      }
+    <!-- Help Panel -->
+    <div class="help-overlay" *ngIf="showHelp" (click)="showHelp = false"></div>
+    <div class="help-panel" [class.open]="showHelp">
+        <button class="close-help" (click)="showHelp = false">×</button>
+        <h3>Karten & Regeln</h3>
+        <ul>
+            <li class="help-item">
+                <div class="help-card-preview">
+                    <app-card [card]="helpCards['skullking']" size="sm"></app-card>
+                </div>
+                <div class="desc">
+                    <strong>Skull King</strong>
+                    <br>Schlägt alle Karten außer die Mermaid. Gibt 50 Pkt pro gefangenem Piraten.
+                </div>
+            </li>
+            <li class="help-item">
+                <div class="help-card-preview">
+                     <app-card [card]="helpCards['pirate']" size="sm"></app-card>
+                </div>
+                <div class="desc">
+                    <strong>Pirat</strong>
+                    <br>Schlägt alle Farben und Escapes. Wird nur vom Skull King oder Kraken geschlagen.
+                </div>
+            </li>
+            <li class="help-item">
+                <div class="help-card-preview">
+                    <app-card [card]="helpCards['mermaid']" size="sm"></app-card>
+                </div>
+                <div class="desc">
+                    <strong>Mermaid</strong>
+                    <br>Schlägt alle Farben und Escapes. Wird von Piraten geschlagen. <strong>Schlägt den Skull King!</strong> (+50 Pkt für King)
+                </div>
+            </li>
+             <li class="help-item">
+                <div class="help-card-preview">
+                    <app-card [card]="helpCards['tigress']" size="sm"></app-card>
+                </div>
+                <div class="desc">
+                    <strong>Tigress</strong>
+                    <br>Kann als Escape ODER als Pirat gespielt werden. Du entscheidest beim Ausspielen.
+                </div>
+            </li>
+             <li class="help-item">
+                <div class="help-card-preview">
+                    <app-card [card]="helpCards['kraken']" size="sm"></app-card>
+                </div>
+                <div class="desc">
+                    <strong>Kraken</strong>
+                    <br>Zerstört den Stich! Niemand gewinnt. Der nächste Spieler beginnt (Ausnahme: letzte Runde).
+                </div>
+            </li>
+            <li class="help-item">
+                <div class="help-card-preview">
+                    <app-card [card]="helpCards['black']" size="sm"></app-card>
+                </div>
+                <div class="desc">
+                    <strong>Schwarz (Jolly Roger)</strong>
+                    <br>Trumpffarbe. Schlägt Gold, Grün und Lila.
+                </div>
+            </li>
+             <li class="help-item">
+                <div class="help-card-preview">
+                    <app-card [card]="helpCards['loot']" size="sm"></app-card>
+                </div>
+                <div class="desc">
+                    <strong>Loot (Beute)</strong>
+                    <br>Du und der Stichgewinner erhalten jeweils 20 Bonuspunkte. Karte gilt als "Farblos" (wie Escape), man gewinnt damit nie.
+                </div>
+            </li>
+            <li class="help-item">
+                <div class="help-card-preview">
+                    <app-card [card]="helpCards['escape']" size="sm"></app-card>
+                </div>
+                <div class="desc">
+                    <strong>Escape (White Flag)</strong>
+                    <br>Verliert immer (außer gegen andere Escapes). Wenn alle Escape spielen, gewinnt die erste.
+                </div>
+            </li>
+            <li class="help-item">
+                <div class="help-card-preview" style="display:flex; gap: 5px;">
+                     <app-card [card]="helpCards['yellow']" size="sm" style="transform: scale(0.8);"></app-card>
+                     <app-card [card]="helpCards['green']" size="sm" style="transform: scale(0.8);"></app-card>
+                </div>
+                <div class="desc">
+                    <strong>Farben (1-13)</strong>
+                    <br>Höhere Zahl gewinnt. Farbe muss bedient werden!
+                </div>
+            </li>
+        </ul>
+        <h3>Punkte</h3>
+        <p>Stich angesagt & getroffen: 20 Pkt pro Stich.</p>
+        <p>0 angesagt & getroffen: Runde * 10 Pkt.</p>
+        <p>Falsch angesagt: Differenz * -10 Pkt.</p>
+    </div>
 
-      <div class="messages">
-        @for (msg of messages; track $index) {
-          @if (msg.isSystem) {
-            <div class="system-msg">{{ msg.message }}</div>
-          } @else {
-            <div class="message" [class.own]="msg.playerName === playerName">
-              <span class="msg-meta">
-                <span class="msg-author">{{ msg.playerName }}</span>
-                <span class="msg-time">{{ msg.timestamp | date: 'HH:mm' }}</span>
-              </span>
-              <div class="msg-bubble">{{ msg.message }}</div>
+    <!-- Opponents Area (Top) -->
+    <div class="opponents-row">
+        <div *ngFor="let p of opponents" class="opponent" [class.active-turn]="p.isTurn">
+            <div class="avatar">{{ p.name.charAt(0) }}</div>
+            <div class="name">{{ p.name }}</div>
+            <div class="stats">
+                Bid: {{ p.bid !== null ? p.bid : '?' }} | Won: {{ p.tricksWon }}
             </div>
-          }
-        }
-        <div #messagesEnd></div>
-      </div>
-
-      <div class="chat-input">
-        <input
-          type="text"
-          placeholder="Nachricht schreiben..."
-          [(ngModel)]="messageInput"
-          (keyup.enter)="sendMessage()"
-          maxlength="500"
-          autocomplete="off"
-        />
-        <button class="btn-primary send-btn" (click)="sendMessage()" [disabled]="!messageInput.trim()">
-          &#10148;
-        </button>
-      </div>
+            <div class="hand-back">
+                <div class="mini-cards">
+                    <div *ngFor="let c of getRange(p.handCount)" class="mini-card"></div>
+                </div>
+            </div>
+        </div>
     </div>
-  }
-}
+
+    <!-- Game Table (Center) -->
+    <div class="game-table">
+        <!-- Start Button if Lobby -->
+        <div *ngIf="gameState.phase === 'lobby'" class="lobby-controls">
+            <h1 class="room-code-display">Raum ID: <span>{{ roomId }}</span></h1>
+            <p class="invite-hint">Teile diesen Code mit deinen Freunden!</p>
+            <h3>Warte auf Spieler... ({{ gameState.players.length }}/5)</h3>
+            
+            <div class="bot-controls">
+                <button (click)="addBot('easy')" class="btn-bot">Einfacher Bot</button>
+                <button (click)="addBot('medium')" class="btn-bot">Normaler Bot</button>
+                <button (click)="addBot('hard')" class="btn-bot">Schwieriger Bot</button>
+            </div>
+
+            <button (click)="startGame()" class="btn-start" [disabled]="gameState.players.length < 2">Spiel Starten</button>
+        </div>
+
+        <!-- Bidding UI -->
+        <div *ngIf="gameState.phase === 'bidding' && gameState.me.bid === null" class="bidding-overlay">
+            <h3>Wieviele Stiche machst du?</h3>
+            <div class="bid-controls">
+                <button (click)="bidInput = bidInput - 1" [disabled]="bidInput <= 0">-</button>
+                <span class="bid-value">{{ bidInput }}</span>
+                <button (click)="bidInput = bidInput + 1" [disabled]="bidInput >= gameState.round">+</button>
+            </div>
+            <button (click)="submitBid()" class="btn-bid">Yo-Ho-Ho!</button>
+        </div>
+
+         <!-- Waiting for others to bid -->
+         <div *ngIf="gameState.phase === 'bidding' && gameState.me.bid !== null" class="waiting-msg">
+            <p>Warte auf andere Gebote...</p>
+        </div>
+
+        <!-- Trick Area -->
+        <div class="trick-area" *ngIf="gameState.phase === 'playing' || gameState.phase === 'finished'">
+            <div *ngFor="let play of gameState.currentTrick" class="played-card" [class.winning-card]="play.playerId === trickWinnerId">
+                 <div class="winner-label" *ngIf="play.playerId === trickWinnerId">Gewonnen!</div>
+                 <app-card [card]="play.card" size="md"></app-card>
+                 <span class="player-label">{{ (gameState.players | w_findPlayer:play.playerId)?.name }}</span>
+            </div>
+            
+            <div *ngIf="gameState.currentTrick.length === 0 && gameState.phase === 'playing'" class="empty-table-msg">
+                <p>Warte auf {{ (gameState.players | w_activePlayer)?.name }}...</p>
+                <p *ngIf="gameState.lastWinnerId">Letzter Stich: {{ (gameState.players | w_findPlayer:gameState.lastWinnerId)?.name }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Player Hand (Bottom) -->
+    <div class="player-hand">
+        <div class="hand-wrapper">
+             <div *ngFor="let card of gameState.hand; let i = index" 
+                  class="hand-card-container" 
+                  [style.transform]="getCardRotation(i, gameState.hand.length)"
+                  (click)="playCard(card)">
+                  
+                 <app-card [card]="card" 
+                           [selectable]="gameState.phase === 'playing' && gameState.me.id === (gameState.players | w_activePlayer)?.id" 
+                           size="lg">
+                 </app-card>
+             </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Loading / Error -->
+<div *ngIf="!gameState" class="loading">
+    <p>Verbinde mir Raum...</p>
+</div>

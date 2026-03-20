@@ -1,0 +1,21 @@
+<div class="playing-card" [ngClass]="cardClass">
+    <div class="card-image-bg" *ngIf="hasImage" [style.backgroundImage]="'url(' + imagePath + ')'"></div>
+    <img [src]="imagePath" (load)="hasImage = true" (error)="hasImage = false" style="display: none;">
+
+    <div class="card-inner" *ngIf="!hasImage">
+        <div class="top-left">
+            <span class="value">{{ displayValue }}</span>
+            <span class="icon">{{ fallbackIcon || icon }}</span>
+        </div>
+        
+        <div class="center-content">
+            <span class="big-icon">{{ icon }}</span>
+            <span class="big-value" *ngIf="displayValue">{{ displayValue }}</span>
+        </div>
+
+        <div class="bottom-right">
+            <span class="value">{{ displayValue }}</span>
+            <span class="icon">{{ fallbackIcon || icon }}</span>
+        </div>
+    </div>
+</div>

@@ -6,8 +6,8 @@ import { Observable } from 'rxjs';
 export class RoomService {
   constructor(private http: HttpClient) {}
 
-  createRoom(): Observable<{ roomId: string }> {
-    return this.http.post<{ roomId: string }>('/api/rooms', {});
+  createRoom(config?: { withBots: boolean, botCount: number, difficulty: string }): Observable<{ roomId: string }> {
+    return this.http.post<{ roomId: string }>('/api/rooms', config || {});
   }
 
   checkRoom(id: string): Observable<{ exists: boolean }> {

@@ -10,6 +10,10 @@ export class SocketService implements OnDestroy {
     this.socket = io({ autoConnect: false, transports: ['websocket', 'polling'] });
   }
 
+  ngOnDestroy() {
+    this.disconnect();
+  }
+
   connect() {
     if (!this.socket.connected) this.socket.connect();
   }
@@ -17,6 +21,8 @@ export class SocketService implements OnDestroy {
   disconnect() {
     if (this.socket.connected) this.socket.disconnect();
   }
+
+  // --- Room Events ---
 
   joinRoom(roomId: string, playerName: string) {
     this.socket.emit('room:join', { roomId, playerName });
@@ -50,19 +56,45 @@ export class SocketService implements OnDestroy {
     return this.fromEvent('room:user_left');
   }
 
-  onChatMessage(): Observable<{ playerName: string; message: string; timestamp: number }> {
-    return this.fromEvent('chat:message');
+  // --- Game Events ---
+  
+  startGame(roomId: string) {
+    this.socket.emit('game:start', { roomId });
   }
+
+  addBot(roomId: string, difficulty: string) {
+    this.socket.emit('game:addBot', { roomId, difficulty });
+  }
+
+  submitBid(roomId: string, bid: number) {
+    this.socket.emit('game:bid', { roomId, bid });
+  }
+
+  playCard(roomId: string, cardId: string) {
+    this.socket.emit('game:play', { roomId, cardId });
+  }
+
+  onGameState(): Observable<any> {
+    return this.fromEvent('game:state');
+  }
+
+  onTrickResult(): Observable<{ winnerId: string }> {
+      return this.fromEvent<{ winnerId: string }>('trickResult');
+  }
+
+  onNotification(): Observable<string> {
+    return this.fromEvent<string>('notification');
+  }
+
+  onErrorNotification(): Observable<string> {
+    return this.fromEvent<string>('errorNotification');
+  }
+
+  // --- Helper ---
 
   private fromEvent<T>(event: string): Observable<T> {
-    return new Observable<T>((observer) => {
-      const handler = (data: T) => observer.next(data);
-      this.socket.on(event, handler);
-      return () => this.socket.off(event, handler);
+    return new Observable<T>(observer => {
+      this.socket.on(event, (data: T) => observer.next(data));
     });
-  }
-
-  ngOnDestroy() {
-    this.socket.disconnect();
   }
 }

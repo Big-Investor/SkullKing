@@ -3,6 +3,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
 const crypto = require('crypto');
+const Game = require('./classes/Game'); // Importiere Game Logik
 
 const app = express();
 const server = http.createServer(app);
@@ -12,127 +13,94 @@ const io = new Server(server, {
 
 const PORT = process.env.PORT || 3000;
 
-// ─── Configuration ────────────────────────────────────────────────────────────
-const ROOM_MAX_PLAYERS = 5;         // Maximum players per room
-const RECONNECT_GRACE_MS = 30_000;  // Grace period before removing a disconnected player
-
 app.use(express.json());
 
-// ─── Room State ───────────────────────────────────────────────────────────────
-// rooms: Map<roomId, { id, players: Map<playerName, { socketId, leaveTimeout }> }>
-const rooms = new Map();
-
-function deleteRoomIfEmpty(roomId) {
-  const room = rooms.get(roomId);
-  if (room && room.players.size === 0) {
-    rooms.delete(roomId);
-    console.log(`[Room ${roomId}] deleted (empty)`);
-  }
-}
+// ─── Game Management ──────────────────────────────────────────────────────────
+const games = new Map(); // Map<roomId, GameInstance>
 
 // ─── REST API ─────────────────────────────────────────────────────────────────
-app.post('/api/rooms', (_req, res) => {
+app.post('/api/rooms', (req, res) => {
   const id = crypto.randomBytes(4).toString('hex');
-  rooms.set(id, { id, players: new Map() });
-  console.log(`[Room ${id}] created`);
+  const game = new Game(id, io);
+  
+  // Optional: Bot Configuration
+  if (req.body.withBots && req.body.botCount > 0) {
+      game.addBots(req.body.botCount, req.body.difficulty || 'medium');
+      console.log(`[Game ${id}] created with ${req.body.botCount} bots (${req.body.difficulty})`);
+  } else {
+      console.log(`[Game ${id}] created`);
+  }
+  
+  games.set(id, game);
   res.status(201).json({ roomId: id });
 });
 
 app.get('/api/rooms/:id', (req, res) => {
-  res.json({ exists: rooms.has(req.params.id) });
+  res.json({ exists: games.has(req.params.id) });
 });
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 
 // ─── Socket.io ────────────────────────────────────────────────────────────────
 io.on('connection', (socket) => {
-  let roomId = null;
-  let playerName = null;
-
-  function removePlayer(immediate) {
-    if (!roomId || !playerName) return;
-    const room = rooms.get(roomId);
-    if (!room) return;
-    const player = room.players.get(playerName);
-    if (!player) return;
-
-    if (player.leaveTimeout) clearTimeout(player.leaveTimeout);
-    room.players.delete(playerName);
-    socket.leave(roomId);
-
-    io.to(roomId).emit('room:user_left', {
-      playerName,
-      players: Array.from(room.players.keys()),
-    });
-    console.log(`[Room ${roomId}] ${playerName} left (${room.players.size}/${ROOM_MAX_PLAYERS})`);
-
-    const leavingRoom = roomId;
-    roomId = null;
-    playerName = null;
-
-    deleteRoomIfEmpty(leavingRoom);
-  }
-
-  socket.on('room:join', ({ roomId: rid, playerName: name }) => {
-    if (typeof rid !== 'string' || typeof name !== 'string') return;
-    const trimmedName = name.trim().slice(0, 20);
-    if (!trimmedName) return;
-
-    const room = rooms.get(rid);
-    if (!room) {
-      socket.emit('room:not_found', { message: `Raum "${rid}" wurde nicht gefunden.` });
+  console.log(`[Socket] connected: ${socket.id}`);
+  
+  socket.on('room:join', ({ roomId, playerName }) => {
+    const game = games.get(roomId);
+    if (!game) {
+      socket.emit('room:not_found');
       return;
     }
 
-    const existing = room.players.get(trimmedName);
-    if (existing) {
-      // Reconnection: cancel pending removal and update socket ID
-      if (existing.leaveTimeout) {
-        clearTimeout(existing.leaveTimeout);
-        existing.leaveTimeout = null;
-      }
-      existing.socketId = socket.id;
+    // Spieler hinzufügen
+    if (game.addPlayer(socket.id, playerName)) {
+        socket.join(roomId);
+        console.log(`[Game ${roomId}] ${playerName} joined`);
+        
+        // Allen den neuen Status senden
+        game.emitState();
     } else {
-      if (room.players.size >= ROOM_MAX_PLAYERS) {
-        socket.emit('room:full', {
-          message: `Dieser Raum ist bereits voll (max. ${ROOM_MAX_PLAYERS} Spieler).`,
-        });
-        return;
-      }
-      room.players.set(trimmedName, { socketId: socket.id, leaveTimeout: null });
-      socket.to(rid).emit('room:user_joined', {
-        playerName: trimmedName,
-        players: Array.from(room.players.keys()),
-      });
+        socket.emit('errorNotification', 'Room full or game already started');
     }
-
-    roomId = rid;
-    playerName = trimmedName;
-    socket.join(rid);
-
-    socket.emit('room:joined', { players: Array.from(room.players.keys()) });
-    console.log(`[Room ${rid}] ${trimmedName} joined (${room.players.size}/${ROOM_MAX_PLAYERS})`);
   });
 
-  socket.on('chat:send', ({ message }) => {
-    if (!roomId || !playerName || !rooms.has(roomId)) return;
-    if (typeof message !== 'string' || !message.trim()) return;
-    io.to(roomId).emit('chat:message', {
-      playerName,
-      message: message.trim().slice(0, 500),
-      timestamp: Date.now(),
-    });
+  socket.on('game:start', ({ roomId }) => {
+      const game = games.get(roomId);
+      if (game) game.start();
   });
 
-  socket.on('room:leave', () => removePlayer(true));
+  socket.on('game:addBot', ({ roomId, difficulty }) => {
+      const game = games.get(roomId);
+      if (game) {
+          game.addBots(1, difficulty); // Add single bot
+      }
+  });
+
+  socket.on('game:bid', ({ roomId, bid }) => {
+      const game = games.get(roomId);
+      if (game) game.handleBid(socket.id, bid);
+  });
+
+  socket.on('game:play', ({ roomId, cardId }) => {
+      const game = games.get(roomId);
+      if (game) game.handlePlayCard(socket.id, cardId);
+  });
+
   socket.on('disconnect', () => {
-    if (!roomId || !playerName) return;
-    const room = rooms.get(roomId);
-    if (!room) return;
-    const player = room.players.get(playerName);
-    if (!player) return;
-    player.leaveTimeout = setTimeout(() => removePlayer(false), RECONNECT_GRACE_MS);
-    console.log(`[Room ${roomId}] ${playerName} disconnected (grace period started)`);
+    // Einfache Logik: Spieler entfernen wenn disconnect
+    // In Produktion würde man Reconnect-Logik brauchen
+    for (const [id, game] of games.entries()) {
+        const p = game.players.find(p => p.id === socket.id);
+        if (p) {
+            game.removePlayer(socket.id);
+            if (game.players.length === 0) {
+                games.delete(id);
+                console.log(`[Game ${id}] closed (empty)`);
+            } else {
+                game.emitState();
+            }
+        }
+    }
   });
 });
 
@@ -142,4 +110,6 @@ app.use(express.static(distPath));
 
 app.get('*', (_req, res) => res.sendFile(path.join(distPath, 'index.html')));
 
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+});
