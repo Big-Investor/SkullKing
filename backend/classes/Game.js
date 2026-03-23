@@ -19,7 +19,7 @@ class Game {
 
   addPlayer(id, name, isBot = false, difficulty = 'medium') {
     if (this.phase !== 'lobby') return false;
-    if (this.players.length >= 6) return false;
+    if (this.players.length >= 8) return false;
     
     if (isBot) {
         this.players.push(new Bot(id, name, difficulty));
@@ -31,9 +31,12 @@ class Game {
 
   addBots(count, difficulty) {
       if (this.phase !== 'lobby') return;
+      const names = ['Blackbeard', 'Hook', 'Sparrow', 'Morgan', 'Drake', 'Barbossa', 'Jones', 'Silver'];
+      let currentBotCount = this.players.filter(p => p.isBot).length;
+      
       for (let i = 0; i < count; i++) {
-          const names = ['Blackbeard', 'Hook', 'Sparrow', 'Morgan', 'Drake'];
-          const name = names[i % names.length] + ' (Bot)';
+          const nameIndex = (currentBotCount + i) % names.length;
+          const name = names[nameIndex] + ' (Bot)';
           const id = 'bot-' + Date.now() + '-' + i;
           this.addPlayer(id, name, true, difficulty);
       }
@@ -46,6 +49,13 @@ class Game {
 
   start() {
     if (this.players.length < 2) return; // Minimum 2 players
+    
+    // Adjust max rounds based on player count (Total 69 cards)
+    // 7 players: Max 9 rounds
+    // 8 players: Max 8 rounds
+    const deckSize = 69;
+    this.maxRounds = Math.min(10, Math.floor(deckSize / this.players.length));
+
     this.round = 1;
     this.startRound();
   }
@@ -111,9 +121,11 @@ class Game {
 
               // Determine lead suit if not first
               let leadSuit = null;
-              if (this.currentTrick.length > 0) {
-                  const lead = this.currentTrick[0].card;
-                  if (lead.type === 'suit') leadSuit = lead.color;
+              for (const t of this.currentTrick) {
+                  if (t.card.type === 'suit') {
+                      leadSuit = t.card.color;
+                      break;
+                  }
               }
 
               // Use Bot's chooseCard method
@@ -130,6 +142,9 @@ class Game {
   handlePlayCard(playerId, cardId) {
     if (this.phase !== 'playing') return;
     
+    // Validate Current Trick State (Prevent playing if trick is already full/resolving)
+    if (this.currentTrick.length >= this.players.length) return;
+
     const playerIndex = this.players.findIndex(p => p.id === playerId);
     if (playerIndex !== this.currentPlayerIndex) return;
 

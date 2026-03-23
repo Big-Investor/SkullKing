@@ -26,6 +26,7 @@ export class GameComponent implements OnInit, OnDestroy {
   
   trickWinnerId: string | null = null;
   private lastRound = 0;
+  isProcessingMove: boolean = false;
   
   helpCards: { [key: string]: Card } = {
     skullking: { id: 'help-sk', type: 'skullking' },
@@ -83,18 +84,21 @@ export class GameComponent implements OnInit, OnDestroy {
         }
 
         this.gameState = state;
+        this.isProcessingMove = false; // Reset processing flag on new state
       })
     );
 
     this.subs.add(
         this.socketService.onNotification().subscribe((msg: string) => {
             this.showNotification(msg);
+            this.isProcessingMove = false; // Reset on notification (e.g., error or success)
         })
     );
 
     this.subs.add(
         this.socketService.onErrorNotification().subscribe((msg: string) => {
             this.error = msg;
+            this.isProcessingMove = false; // Reset on error
             setTimeout(() => this.error = null, 3000);
         })
     );
@@ -124,6 +128,8 @@ export class GameComponent implements OnInit, OnDestroy {
   }
 
   playCard(card: Card) {
+    if (this.isProcessingMove) return;
+
     const state = this.gameState;
     // Basic validation
     if (!state?.me) return;
@@ -136,6 +142,7 @@ export class GameComponent implements OnInit, OnDestroy {
     }
 
     if (this.roomId) {
+      this.isProcessingMove = true;
       this.socketService.playCard(this.roomId, card.id);
     }
   }

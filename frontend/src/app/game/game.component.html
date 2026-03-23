@@ -135,7 +135,7 @@
         <div *ngIf="gameState.phase === 'lobby'" class="lobby-controls">
             <h1 class="room-code-display">Raum ID: <span>{{ roomId }}</span></h1>
             <p class="invite-hint">Teile diesen Code mit deinen Freunden!</p>
-            <h3>Warte auf Spieler... ({{ gameState.players.length }}/5)</h3>
+            <h3>Warte auf Spieler... ({{ gameState.players.length }}/8)</h3>
             
             <div class="bot-controls">
                 <button (click)="addBot('easy')" class="btn-bot">Einfacher Bot</button>
