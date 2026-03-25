@@ -81,9 +81,9 @@ io.on('connection', (socket) => {
       if (game) game.handleBid(socket.id, bid);
   });
 
-  socket.on('game:play', ({ roomId, cardId }) => {
+  socket.on('game:play', ({ roomId, cardId, playedAs }) => {
       const game = games.get(roomId);
-      if (game) game.handlePlayCard(socket.id, cardId);
+      if (game) game.handlePlayCard(socket.id, cardId, playedAs);
   });
 
   socket.on('disconnect', () => {

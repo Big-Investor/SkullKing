@@ -70,8 +70,8 @@ export class SocketService implements OnDestroy {
     this.socket.emit('game:bid', { roomId, bid });
   }
 
-  playCard(roomId: string, cardId: string) {
-    this.socket.emit('game:play', { roomId, cardId });
+  playCard(roomId: string, cardId: string, playedAs?: 'pirate' | 'escape') {
+    this.socket.emit('game:play', { roomId, cardId, playedAs });
   }
 
   onGameState(): Observable<any> {

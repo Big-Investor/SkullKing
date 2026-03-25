@@ -11,6 +11,7 @@ import { Card } from '../../models/game-types';
 })
 export class CardComponent {
   @Input() card!: Card;
+  @Input() playedAs?: string;
   @Input() selectable: boolean = false;
   @Input() size: 'sm' | 'md' | 'lg' = 'md';
   
@@ -24,6 +25,10 @@ export class CardComponent {
       cls += (this.card.color || '');
     } else {
       cls += this.card.type;
+    }
+
+    if (this.playedAs) {
+        cls += ` as-${this.playedAs}`;
     }
     
     if (this.selectable) cls += ' selectable';
@@ -40,6 +45,12 @@ export class CardComponent {
 
   get icon(): string {
     if (!this.card) return '🏴‍☠️';
+    
+    if (this.card.type === 'tigress') {
+        if (this.playedAs === 'pirate') return '☠️';
+        if (this.playedAs === 'escape') return '🏳️';
+    }
+
     if (this.card.type === 'suit') {
       switch (this.card.color) {
         case 'green': return '🦜';

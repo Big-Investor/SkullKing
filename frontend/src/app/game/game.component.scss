@@ -540,3 +540,220 @@ $secondary: #4DD0E1; // Cyan
     font-size: 2rem;
     color: white;
 }
+
+// ─── NEW STYLES FOR TURN INDICATION ───
+
+// Keyframes for pulsing border color
+@keyframes borderPulse {
+    0% { border-color: $accent; box-shadow: 0 0 10px rgba($accent, 0.5); }
+    50% { border-color: lighten($accent, 20%); box-shadow: 0 0 25px rgba($accent, 0.8); }
+    100% { border-color: $accent; box-shadow: 0 0 10px rgba($accent, 0.5); }
+}
+
+@keyframes turnTextPulse {
+    0% { transform: translateX(-50%) scale(1); opacity: 0.9; }
+    50% { transform: translateX(-50%) scale(1.05); opacity: 1; text-shadow: 0 0 20px $accent; }
+    100% { transform: translateX(-50%) scale(1); opacity: 0.9; }
+}
+
+.opponent.active-turn {
+    opacity: 1;
+    transform: scale(1.15) !important; // Override existing hover/scale
+    z-index: 10;
+    
+    .avatar {
+        animation: borderPulse 1.5s infinite;
+        border-width: 4px;
+        border-color: $accent !important;
+    }
+    
+    // "Thinking" / Turn label
+    &::after {
+        content: 'Am Zug';
+        position: absolute;
+        top: -25px;
+        background: $accent;
+        color: #3E2723;
+        font-weight: bold;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        animation: popIn 0.3s;
+        white-space: nowrap;
+    }
+}
+
+// SUMMARY / GAME OVER OVERLAY
+.summary-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 3000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+    animation: fadeIn 0.5s;
+    color: white;
+
+    h2, h1 {
+        font-size: 2.5rem;
+        color: $accent;
+        margin-bottom: 30px;
+        text-shadow: 0 0 10px rgba($accent, 0.4);
+    }
+    
+    table {
+        width: 80%;
+        max-width: 800px;
+        border-collapse: collapse;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+
+        th, td {
+            padding: 15px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        th {
+            background: rgba($accent, 0.2);
+            color: $accent;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+        }
+
+        tr:last-child td { border-bottom: none; }
+        
+        tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+    }
+    
+    .loading-bar {
+        margin-top: 40px;
+        font-size: 1.2rem;
+        color: $text-muted;
+        animation: pulse 1s infinite alternate;
+    }
+
+    &.finished {
+        background: linear-gradient(135deg, rgba(0,0,0,0.9), rgba(62, 39, 35, 0.95));
+        
+        .winner-display {
+            font-size: 3rem;
+            color: $secondary;
+            margin-bottom: 40px;
+            font-weight: bold;
+            animation: popIn 1s;
+        }
+    }
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+// My Turn indicator Banner
+.my-turn-banner {
+    position: fixed;
+    top: 15%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(33, 33, 33, 0.85);
+    color: $accent;
+    padding: 15px 50px;
+    border-radius: 50px;
+    border: 3px solid $accent;
+    font-size: 2.5rem;
+    font-weight: 900;
+    z-index: 2000;
+    pointer-events: none;
+    animation: turnTextPulse 1.5s infinite ease-in-out;
+    backdrop-filter: blur(5px);
+    box-shadow: 0 0 50px rgba(0,0,0,0.6), inset 0 0 20px rgba($accent, 0.2);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+// Highlight Hand when it's my turn
+.game-container.my-turn-active .player-hand {
+    .hand-wrapper {
+        // Subtle glow behind cards
+        filter: drop-shadow(0 -10px 20px rgba($accent, 0.3));
+    }
+    
+    .hand-card-container:hover {
+        // Stronger lift on hover explicitly during turn
+        transform: translateY(-50px) scale(1.15) !important;
+    }
+}
+
+
+/* Tigress Modal Styles */
+.tigress-options {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin: 20px 0;
+
+    .choice-btn {
+        padding: 15px 30px;
+        border: none;
+        border-radius: 8px;
+        font-weight: bold;
+        cursor: pointer;
+        font-size: 1.1rem;
+        transition: transform 0.2s;
+
+        &:hover { transform: scale(1.05); }
+
+        &.pirate { background: #d32f2f; color: white; box-shadow: 0 4px 0 #b71c1c; }
+        &.escape { background: #eeeeee; color: #333; box-shadow: 0 4px 0 #bdbdbd; }
+    }
+}
+
+.cancel-btn {
+    background: transparent;
+    border: 1px solid #666;
+    color: #ccc;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 10px;
+    &:hover { background: rgba(255,255,255,0.1); }
+}
+
+
+/* Generic Overlay (for Tigress Modal) */
+.overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    backdrop-filter: blur(3px);
+}
+
+.modal {
+    background: #263238;
+    padding: 30px 40px;
+    border-radius: 12px;
+    border: 2px solid #FFD54F; /* Accent */
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    color: white;
+    max-width: 90vw;
+    animation: popIn 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+
+    h2 { margin-bottom: 15px; color: #FFD54F; font-size: 1.8rem; text-transform: uppercase; }
+    p { font-size: 1.1rem; margin-bottom: 25px; line-height: 1.5; color: #eceff1; }
+}
+
+@keyframes popIn {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}

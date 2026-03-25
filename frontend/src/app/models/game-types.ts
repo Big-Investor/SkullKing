@@ -9,6 +9,7 @@ export interface Player {
     id: string;
     name: string;
     score: number;
+    lastRoundScore?: number;
     bid: number | null;
     tricksWon: number;
     isTurn: boolean;
@@ -19,16 +20,11 @@ export interface GameState {
     roomId: string;
     round: number;
     maxRounds: number;
-    phase: 'lobby' | 'bidding' | 'playing' | 'finished';
+    phase: 'lobby' | 'bidding' | 'playing' | 'roundSummary' | 'finished';
     hand: Card[];
-    currentTrick: { playerId: string; card: Card }[];
-    turnIndex: number;
-    me: {
-        id: string;
-        bid: number | null;
-        score: number;
-        tricksWon: number;
-    };
+    currentTrick: { playerId: string; card: Card; playedAs?: string }[];
+    me: { id: string; bid: number | null; score: number; tricksWon: number; lastRoundScore?: number };
     players: Player[];
     lastWinnerId: string | null;
+    turnIndex: number;
 }

@@ -15,6 +15,7 @@ class Player {
     this.bid = null;
     this.tricksWon = 0;
     this.bonusPoints = 0;
+    this.lastRoundScore = 0;
   }
 }
 

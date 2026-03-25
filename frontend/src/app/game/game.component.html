@@ -1,4 +1,9 @@
-<div class="game-container" *ngIf="gameState">
+<div class="game-container" *ngIf="gameState" [class.my-turn-active]="gameState.players[gameState.turnIndex]?.id === gameState.me.id">
+
+    <!-- ADDED: My Turn Banner -->
+    <div class="my-turn-banner" *ngIf="gameState.phase === 'playing' && gameState.players[gameState.turnIndex]?.id === gameState.me.id">
+        DU BIST DRAN!
+    </div>
 
     <!-- Notifications -->
     <div class="notifications">
@@ -166,7 +171,7 @@
         <div class="trick-area" *ngIf="gameState.phase === 'playing' || gameState.phase === 'finished'">
             <div *ngFor="let play of gameState.currentTrick" class="played-card" [class.winning-card]="play.playerId === trickWinnerId">
                  <div class="winner-label" *ngIf="play.playerId === trickWinnerId">Gewonnen!</div>
-                 <app-card [card]="play.card" size="md"></app-card>
+                   <app-card [card]="play.card" [playedAs]="play.playedAs" size="md"></app-card>
                  <span class="player-label">{{ (gameState.players | w_findPlayer:play.playerId)?.name }}</span>
             </div>
             
@@ -195,7 +200,75 @@
 
 </div>
 
+<!-- SUMMARY OVERLAY ROUND -->
+<div class="summary-overlay" *ngIf="gameState && gameState.phase === 'roundSummary'">
+    <h2>Runden Ergebnis (Runde {{ gameState?.round }})</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Spieler</th>
+                <th>Bid</th>
+                <th>Won</th>
+                <th>Round Score</th>
+                <th>Total Score</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr *ngFor="let p of sortedPlayers">
+                <td>{{ p.name }}</td>
+                <td>{{ p.bid }}</td>
+                <td>{{ p.tricksWon }}</td>
+                <td>{{ p.lastRoundScore ?? 0 }}</td> 
+                <td>{{ p.score }}</td>
+            </tr>
+        </tbody>
+    </table>
+    <div class="loading-bar">Nächste Runde startet gleich...</div>
+</div>
+
+<!-- GAME OVER SCREEN (Finished) -->
+<div class="summary-overlay finished" *ngIf="gameState && gameState.phase === 'finished'">
+    <div class="winner-display">
+        🏆 {{ sortedPlayers[0]?.name }} gewinnt! 🏆
+    </div>
+    <h2>SPIELENDE!</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Rang</th>
+                <th>Spieler</th>
+                <th>Total Score</th>
+            </tr>
+        </thead>
+        <tbody>
+             <tr *ngFor="let p of sortedPlayers; let i = index">
+                <td>#{{ i + 1 }}</td>
+                <td>{{ p.name }}</td>
+                <td>{{ p.score }}</td>
+            </tr>
+        </tbody>
+    </table>
+    <button onclick="window.location.href='/'" class="btn-start" style="margin-top: 40px;">Zurück zur Lobby</button>
+</div>
+
 <!-- Loading / Error -->
 <div *ngIf="!gameState" class="loading">
     <p>Verbinde mir Raum...</p>
+</div>
+
+<!-- Tigress Modal -->
+<div class="overlay" *ngIf="showTigressModal">
+    <div class="modal">
+        <h2>Tigress gespielt!</h2>
+        <p>Als was möchtest du die Tigress spielen?</p>
+        <div class="tigress-options">
+            <button class="choice-btn pirate" (click)="confirmTigressPlay('pirate')">
+                PIRAT
+            </button>
+            <button class="choice-btn escape" (click)="confirmTigressPlay('escape')">
+                FLUCHT (Weiß)
+            </button>
+        </div>
+        <button class="cancel-btn" (click)="cancelTigressPlay()">Abbrechen</button>
+    </div>
 </div>

@@ -27,6 +27,10 @@ export class GameComponent implements OnInit, OnDestroy {
   trickWinnerId: string | null = null;
   private lastRound = 0;
   isProcessingMove: boolean = false;
+
+  // Tigress
+  selectedTigress: Card | null = null;
+  showTigressModal = false;
   
   helpCards: { [key: string]: Card } = {
     skullking: { id: 'help-sk', type: 'skullking' },
@@ -140,11 +144,32 @@ export class GameComponent implements OnInit, OnDestroy {
         this.showNotification("Du bist nicht am Zug!");
         return;
     }
+    
+    // Check for Tigress
+    if (card.type === 'tigress') {
+        this.selectedTigress = card;
+        this.showTigressModal = true;
+        return;
+    }
 
     if (this.roomId) {
       this.isProcessingMove = true;
       this.socketService.playCard(this.roomId, card.id);
     }
+  }
+
+  confirmTigressPlay(choice: 'pirate' | 'escape') {
+      if (this.roomId && this.selectedTigress) {
+          this.isProcessingMove = true;
+          this.socketService.playCard(this.roomId, this.selectedTigress.id, choice);
+          this.showTigressModal = false;
+          this.selectedTigress = null;
+      }
+  }
+
+  cancelTigressPlay() {
+      this.showTigressModal = false;
+      this.selectedTigress = null;
   }
 
   get opponents() {
@@ -161,6 +186,11 @@ export class GameComponent implements OnInit, OnDestroy {
 
   getRange(n: number): any[] {
     return Array(n).fill(0);
+  }
+
+  get sortedPlayers(): Player[] {
+      if (!this.gameState) return [];
+      return [...this.gameState.players].sort((a, b) => b.score - a.score);
   }
 
   showNotification(msg: string) {

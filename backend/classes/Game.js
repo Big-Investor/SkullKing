@@ -132,7 +132,18 @@ class Game {
               const cardToPlay = currentPlayer.chooseCard(this.currentTrick, leadSuit);
               
               if (cardToPlay) {
-                   this.handlePlayCard(currentPlayer.id, cardToPlay.id);
+                   let playedAs = null;
+                   if (cardToPlay.type === 'tigress') {
+                       // Bot Strategy for Tigress:
+                       // If bot wants tricks (tricksWon < bid), play as Pirate.
+                       // Otherwise play as Escape to avoid winning unwanted tricks.
+                       if (currentPlayer.tricksWon < currentPlayer.bid) {
+                           playedAs = 'pirate';
+                       } else {
+                           playedAs = 'escape';
+                       }
+                   }
+                   this.handlePlayCard(currentPlayer.id, cardToPlay.id, playedAs);
               }
 
           }, 1500 + Math.random() * 1000); // Variable delay for realism
@@ -276,13 +287,21 @@ class Game {
     // Check Round End
     if (this.players[0].hand.length === 0) {
         this.calculateScores();
-        if (this.round >= this.maxRounds) {
-            this.phase = 'finished';
-        } else {
-            this.round++;
-            this.startRound();
-        }
-        this.emitState(); // Emit state after round end
+        
+        // Show scoreboard for a moment before next round or finish
+        this.phase = 'roundSummary';
+        this.emitState();
+
+        setTimeout(() => {
+             if (this.round >= this.maxRounds) {
+                  this.phase = 'finished';
+             } else {
+                  this.round++;
+                  this.startRound();
+             }
+             this.emitState(); // Update state to new round or finished
+        }, 8000); // 8 Seconds to look at scores
+
     } else {
         this.emitState(); // Emit state for next trick
         this.checkNextToPlay(); // Trigger next player if bot
@@ -292,53 +311,21 @@ class Game {
   determineTrickWinner(trick) {
       // Logic:
       // Skull King > Pirate > Mermaid > Skull King (Rock Paper Scissors)
-      // Hierarchy:
-      // 1. Skull King (beats all except Mermaid)
-      // 2. Pirate (beats all except Skull King and bigger Pirates?)
-      //    Wait, Pirates count as equal? The first played wins? Standard rule: First played wins.
-      // 3. Mermaid (beats all suits/black, beaten by Pirate. BUT beats Skull King).
-      // 4. Black (Trump Logic)
-      // 5. Suit (Lead color)
-      // 6. Escape (always loses)
       
-      const sk = trick.find(t => t.card.type === 'skullking');
-      const mermaid = trick.find(t => t.card.type === 'mermaid');
-      const pirates = trick.filter(t => t.card.type === 'pirate' || t.card.type === 'tigress');
+      const getEffectiveType = (t) => {
+          if (t.card.type === 'tigress') {
+              return t.playedAs || 'pirate';
+          }
+          return t.card.type;
+      };
+
+      const sk = trick.find(t => getEffectiveType(t) === 'skullking');
+      const mermaid = trick.find(t => getEffectiveType(t) === 'mermaid');
+      // Pirates includes regular pirates AND Tigress played as pirate
+      const pirates = trick.filter(t => getEffectiveType(t) === 'pirate');
 
       // Mermaid beats Skull King
       if (sk && mermaid) {
-          // If both present, Mermaid wins against SK instantly?
-          // Rules: Mermaid beats Skull King. (And gets bonus points).
-          // Does Pirate interfere? "Pirate beats Mermaid".
-          // If SK, Mermaid, AND Pirate are in trick:
-          // Pirate > Mermaid > Skull King > Pirate...
-          // Usually strict hierarchy:
-          // If Pirate is present, Pirate wins (unless SK is there? No, SK beats Pirate).
-          // SK beats Pirate. Pirate beats Mermaid. Mermaid beats SK.
-          // It's a cycle.
-          // If all three:
-          // Pirate beats Mermaid. SK beats Pirate. Mermaid beats SK.
-          // This creates a conflict loop.
-          // Standard Rule: Mermaid BEATS Skull King.
-          // If Mermaid AND Skull King are played, Mermaid wins (and gets +50 bonus).
-          // EXCEPT if a Pirate is played? Pirate beats Mermaid.
-          // So if (Mermaid + Skull King + Pirate):
-          // Pirate beats Mermaid?
-          // Let's implement simplified standard priority if complex cycle:
-          // 1. Mermaid wins IF Skull King is present.
-          // 2. Skull King wins (if no Mermaid).
-          // 3. Pirate wins (if no SK).
-          // Let's verify:
-          // A Pirate wins against Mermaid.
-          // If (P, M, SK) -> Pirate beats Mermaid? SK beats Pirate?
-          // Actually standard rule: "If a Mermaid and Skull King are in the same trick, the Mermaid wins".
-          // "Pirate beats Mermaid". "Skull King beats Pirate".
-          // Usually resolved by play order? No.
-          // Let's assume:
-          // If SK is present:
-          //    If Mermaid is present -> Mermaid wins.
-          //    Else -> SK wins.
-          // (This ignores Pirate beating Mermaid, but in SK vs P vs M scenarios, M wins over SK is the "Special" interaction).
           if (mermaid) return mermaid.playerId;
           return sk.playerId;
       }
@@ -355,7 +342,7 @@ class Game {
       }
       
       // If Mermaid(s) present
-      const mermaids = trick.filter(t => t.card.type === 'mermaid');
+      const mermaids = trick.filter(t => getEffectiveType(t) === 'mermaid');
       if (mermaids.length > 0) {
            // First Mermaid wins
            return mermaids[0].playerId;
@@ -370,9 +357,10 @@ class Game {
           return blacks[0].playerId;
       }
       
-      // Lead Color
+      // Keep original logic for lead color
       let leadColor = null;
       for (const t of trick) {
+          // Escape/Special lead logic handled here implicitly by checking first suit card
           if (t.card.type === 'suit') {
               leadColor = t.card.color;
               break;
@@ -407,24 +395,37 @@ class Game {
           }
           
           const totalRoundScore = roundScore + (p.bonusPoints || 0);
+          p.lastRoundScore = totalRoundScore;
           p.score += totalRoundScore;
           p.scoresHistory.push({ round: this.round, score: totalRoundScore, total: p.score, bid: p.bid, won: p.tricksWon });
       });
   }
 
   emitState() {
-      // Build public player state
-      const publicPlayers = this.players.map(pl => ({
-          id: pl.id,
-          name: pl.name,
-          score: pl.score,
-          bid: pl.bid, // Bid is public
-          tricksWon: pl.tricksWon,
-          isTurn: this.players[this.currentPlayerIndex] ? this.players[this.currentPlayerIndex].id === pl.id : false,
-          handCount: pl.hand.length
-      }));
-
+      // Build public player state (partially masked depending on phase/recipient)
+      
       this.players.forEach(p => {
+          // Logic: Hide bids if phase is 'bidding' and 'p' (the recipient) has not bid yet
+          // AND hide bids of others? 
+          // Rule: "Cannot see other players' bids before you have bid yourself"
+          // So if p.bid === null, they see null for everyone else's bid.
+          // If p.bid !== null, they see the real bids.
+
+          const canSeeBids = (this.phase !== 'bidding') || (p.bid !== null);
+
+          const publicPlayers = this.players.map(pl => ({
+              id: pl.id,
+              name: pl.name,
+              score: pl.score,
+              lastRoundScore: pl.lastRoundScore,
+              // Mask bid if viewer shouldn't see it yet. 
+              // Exception: Always see own bid (pl.id === p.id)
+              bid: (canSeeBids || pl.id === p.id) ? pl.bid : null, 
+              tricksWon: pl.tricksWon,
+              isTurn: this.players[this.currentPlayerIndex] ? this.players[this.currentPlayerIndex].id === pl.id : false,
+              handCount: pl.hand.length
+          }));
+
           this.io.to(p.id).emit('game:state', {
               roomId: this.id,
               round: this.round,
@@ -433,7 +434,7 @@ class Game {
               hand: p.hand,
               currentTrick: this.currentTrick,
               turnIndex: this.currentPlayerIndex,
-              me: { id: p.id, bid: p.bid, score: p.score, tricksWon: p.tricksWon },
+              me: { id: p.id, bid: p.bid, score: p.score, tricksWon: p.tricksWon, lastRoundScore: p.lastRoundScore },
               players: publicPlayers,
               lastWinnerId: this.lastTrickWinner
           });
