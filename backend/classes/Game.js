@@ -262,8 +262,21 @@ class Game {
     const whaleIndex = this.currentTrick.findIndex(t => t.card.type === 'white_whale');
 
     let winnerId = null;
+    let krakenEffect = false;
 
-    if (krakenIndex !== -1 && whaleIndex === -1) {
+    if (krakenIndex !== -1) {
+        if (whaleIndex !== -1) {
+             // Both played: The LATER card takes effect.
+             // If Kraken > Whale, Kraken destroys trick.
+             // If Whale > Kraken, Whale logic applies (in determineTrickWinner).
+             krakenEffect = (krakenIndex > whaleIndex);
+        } else {
+             // Only Kraken played
+             krakenEffect = true;
+        }
+    }
+
+    if (krakenEffect) {
         this.io.in(this.id).emit('notification', 'KRAKEN! Stich zerstört.');
         // No one wins the trick.
         winnerId = this.currentTrick[krakenIndex].playerId;
