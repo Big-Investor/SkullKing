@@ -89,6 +89,20 @@ export class GameComponent implements OnInit, OnDestroy {
 
         this.gameState = state;
         this.isProcessingMove = false; // Reset processing flag on new state
+
+        // Auto-Play Last Card if not round 1
+        if (this.gameState.round > 1 && 
+            this.gameState.phase === 'playing' && 
+            this.gameState.hand.length === 1 &&
+            this.gameState.players[this.gameState.turnIndex]?.id === this.gameState.me.id) {
+            
+            // Wait a short moment for better UX
+            setTimeout(() => {
+                if (this.gameState && this.gameState.hand.length === 1) {
+                    this.playCard(this.gameState.hand[0]);
+                }
+            }, 500);
+        }
       })
     );
 
