@@ -38,6 +38,7 @@ export class GameComponent implements OnInit, OnDestroy {
     mermaid: { id: 'help-me', type: 'mermaid' },
     tigress: { id: 'help-ti', type: 'tigress' },
     kraken: { id: 'help-kr', type: 'kraken' },
+    white_whale: { id: 'help-ww', type: 'white_whale' },
     loot: { id: 'help-lo', type: 'loot' },
     escape: { id: 'help-esc', type: 'escape' },
     black: { id: 'help-bl', type: 'suit', color: 'black', value: 13 },

@@ -25,6 +25,7 @@ class Deck {
     this.cards.push(new Card('skullking')); // 1 Skull King
     this.cards.push(new Card('tigress')); // 1 Tigress
     this.cards.push(new Card('kraken')); // 1 Kraken 
+    this.cards.push(new Card('white_whale')); // 1 White Whale (Weißer Wal)
     
     this.shuffle();
   }

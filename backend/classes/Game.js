@@ -187,9 +187,17 @@ class Game {
         // Determine winner immediately for visual feedback
         let winnerId = null;
         const krakenIndex = this.currentTrick.findIndex(t => t.card.type === 'kraken');
-        if (krakenIndex !== -1) {
-            winnerId = this.currentTrick[krakenIndex].playerId; // Provisional winner for next lead
-            this.io.in(this.id).emit('notification', 'KRAKEN! Stich zerstört.');
+        const whaleIndex = this.currentTrick.findIndex(t => t.card.type === 'white_whale');
+
+        if (krakenIndex !== -1 || whaleIndex !== -1) {
+            // Determine which one was played LAST
+            const destroyerIndex = Math.max(krakenIndex, whaleIndex);
+            winnerId = this.currentTrick[destroyerIndex].playerId; // Provisional winner for next lead
+            
+            const message = (this.currentTrick[destroyerIndex].card.type === 'kraken') 
+                            ? 'KRAKEN! Stich zerstört.' 
+                            : 'WEIßER WAL! Stich zerstört.';
+            this.io.in(this.id).emit('notification', message);
         } else {
             winnerId = this.determineTrickWinner(this.currentTrick);
             const winner = this.players.find(p => p.id === winnerId);
@@ -248,17 +256,21 @@ class Game {
   }
 
   resolveTrick() {
-    // 1. Check Kraken (Destroys trick)
+    // 1. Check if Trick is Destroyed (Kraken ONLY)
+    // White Whale disables Kraken if played in the same trick (specials become unusable).
     const krakenIndex = this.currentTrick.findIndex(t => t.card.type === 'kraken');
+    const whaleIndex = this.currentTrick.findIndex(t => t.card.type === 'white_whale');
+
     let winnerId = null;
 
-    if (krakenIndex !== -1) {
+    if (krakenIndex !== -1 && whaleIndex === -1) {
         this.io.in(this.id).emit('notification', 'KRAKEN! Stich zerstört.');
         // No one wins the trick.
         winnerId = this.currentTrick[krakenIndex].playerId;
     } else {
         winnerId = this.determineTrickWinner(this.currentTrick);
         const winner = this.players.find(p => p.id === winnerId);
+        
         if (winner) {
             winner.tricksWon++;
             this.io.in(this.id).emit('notification', `${winner.name} gewinnt den Stich!`);
@@ -266,7 +278,7 @@ class Game {
             // Apply Loot Bonus: +20 to Loot player and +20 to Trick Winner
             this.currentTrick.forEach(t => {
                 if (t.card.type === 'loot') {
-                    const lootPlayer = this.players.find(p => p.id === t.playerId); // Corrected to use t.playerId
+                    const lootPlayer = this.players.find(p => p.id === t.playerId);
                     if (lootPlayer) lootPlayer.bonusPoints += 20;
                     winner.bonusPoints += 20;
                 }
@@ -309,6 +321,31 @@ class Game {
   }
 
   determineTrickWinner(trick) {
+      // 0. Check White Whale (Weißer Wal)
+      // Effect: All special cards become useless (value 0/Escape).
+      // All colors equal value. Winner: Highest number card.
+      const whaleIndex = trick.findIndex(t => t.card.type === 'white_whale');
+      if (whaleIndex !== -1) {
+          // Filter for number cards only (suits)
+          const numberCards = trick.filter(t => t.card.type === 'suit');
+          
+          if (numberCards.length > 0) {
+              // Sort by value descending.
+              // If values are equal, the first played card of that value wins (standard trick logic for ties without trump).
+              let winner = numberCards[0];
+              for (let i = 1; i < numberCards.length; i++) {
+                  if (numberCards[i].card.value > winner.card.value) {
+                      winner = numberCards[i];
+                  }
+              }
+              return winner.playerId;
+          } else {
+              // No number cards played! (Only specials + whale)
+              // The White Whale player wins.
+              return trick[whaleIndex].playerId;
+          }
+      }
+
       // Logic:
       // Skull King > Pirate > Mermaid > Skull King (Rock Paper Scissors)
       

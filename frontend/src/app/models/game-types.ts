@@ -1,6 +1,6 @@
 export interface Card {
     id: string;
-    type: 'suit' | 'skullking' | 'pirate' | 'mermaid' | 'escape' | 'kraken' | 'tigress' | 'loot';
+    type: 'suit' | 'skullking' | 'pirate' | 'mermaid' | 'escape' | 'kraken' | 'tigress' | 'loot' | 'white_whale';
     color?: 'yellow' | 'green' | 'purple' | 'black';
     value?: number;
 }

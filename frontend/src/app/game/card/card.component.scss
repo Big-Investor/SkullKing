@@ -207,7 +207,17 @@
         );
     }
 
-    &.loot { 
+    &.white_whale { 
+        @include special-card-style(
+           radial-gradient(circle at 50% 40%, #546E7A 0%, #263238 50%, #102027 100%),
+           #CFD8DC,
+           #ECEFF1,
+           rgba(176, 190, 197, 0.4) 
+        );
+        .big-icon { filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8)); }
+    }
+
+    &.loot {  
          @include special-card-style(
             radial-gradient(ellipse at center, #FFF9C4, #FBC02D),
             #F9A825,
