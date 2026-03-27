@@ -10,9 +10,9 @@ class Deck {
     this.cards = [];
     const colors = ['yellow', 'green', 'purple', 'black'];
 
-    // 1-13 for each color (Classic Skull King Rules)
+    // 1-14 for each color (Classic Skull King Rules)
     for (const color of colors) {
-      for (let v = 1; v <= 13; v++) { 
+      for (let v = 1; v <= 14; v++) { 
         this.cards.push(new Card('suit', color, v));
       }
     }
@@ -20,7 +20,14 @@ class Deck {
     // Special cards
     for (let i = 0; i < 5; i++) this.cards.push(new Card('escape')); // 5 Flag Cards (Escapes)
     for (let i = 0; i < 2; i++) this.cards.push(new Card('mermaid')); // 2 Mermaids
-    for (let i = 0; i < 5; i++) this.cards.push(new Card('pirate')); // 5 Pirates
+    
+    // 5 Pirates with extended abilities
+    this.cards.push(new Card('pirate', null, null, 'Rosie D\'Laney'));
+    this.cards.push(new Card('pirate', null, null, 'Bahij the Bandit'));
+    this.cards.push(new Card('pirate', null, null, 'Rascal of Roatan'));
+    this.cards.push(new Card('pirate', null, null, 'Harry the Giant'));
+    this.cards.push(new Card('pirate', null, null, 'Tortuga Jack'));
+
     for (let i = 0; i < 2; i++) this.cards.push(new Card('loot')); // 2 Loot Cards (Beute)
     this.cards.push(new Card('skullking')); // 1 Skull King
     this.cards.push(new Card('tigress')); // 1 Tigress

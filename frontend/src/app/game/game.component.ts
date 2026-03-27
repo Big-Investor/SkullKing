@@ -31,7 +31,17 @@ export class GameComponent implements OnInit, OnDestroy {
   // Tigress
   selectedTigress: Card | null = null;
   showTigressModal = false;
-  
+
+  // Pirate Actions
+  showBahijModal = false;
+  bahijDiscards: string[] = [];
+
+  showHarryModal = false;
+  showRascalModal = false;
+  showRosieModal = false;
+  showTortugaModal = false;
+  tortugaDeck: Card[] = [];
+
   helpCards: { [key: string]: Card } = {
     skullking: { id: 'help-sk', type: 'skullking' },
     pirate: { id: 'help-pi', type: 'pirate' },
@@ -61,12 +71,14 @@ export class GameComponent implements OnInit, OnDestroy {
         return;
     }
 
-    this.roomId = this.route.snapshot.paramMap.get('id');
+    const rawId = this.route.snapshot.paramMap.get('id');
+    this.roomId = rawId ? rawId.toLowerCase() : null;
 
     // 2. Connect and Join
     this.socketService.connect();
     if (this.roomId) {
-        this.socketService.joinRoom(this.roomId, playerName);
+        const isGuest = sessionStorage.getItem('isGuest') === 'true';
+        this.socketService.joinRoom(this.roomId, playerName, isGuest);
     } 
 
     this.subs.add(
@@ -74,6 +86,17 @@ export class GameComponent implements OnInit, OnDestroy {
             this.trickWinnerId = data.winnerId;
             // Highlight is cleared when next trick starts or after delay
             setTimeout(() => this.trickWinnerId = null, 4000); 
+        })
+    );
+
+    this.subs.add(
+        this.socketService.onPirateActionJack().subscribe((data: { deck: Card[] }) => {
+            this.tortugaDeck = data.deck;
+            this.showTortugaModal = true;
+            // Automatically hide after 5 seconds
+            setTimeout(() => {
+                this.showTortugaModal = false;
+            }, 5000);
         })
     );
 
@@ -90,6 +113,23 @@ export class GameComponent implements OnInit, OnDestroy {
 
         this.gameState = state;
         this.isProcessingMove = false; // Reset processing flag on new state
+
+        // Check if pirate_action is required for me
+        if (state.phase === 'pirate_action' && state.pirateActionData?.playerId === state.me.id) {
+            const pName = state.pirateActionData.pirate;
+            if (pName === 'Rosie D\'Laney') this.showRosieModal = true;
+            if (pName === 'Bahij the Bandit') {
+                this.showBahijModal = true;
+                this.bahijDiscards = []; 
+            }
+            if (pName === 'Rascal of Roatan') this.showRascalModal = true;
+            if (pName === 'Harry the Giant') this.showHarryModal = true;
+        } else {
+            this.showRosieModal = false;
+            this.showBahijModal = false;
+            this.showRascalModal = false;
+            this.showHarryModal = false;
+        }
 
         // Auto-Play Last Card if not round 1
         if (this.gameState.round > 1 && 
@@ -185,6 +225,47 @@ export class GameComponent implements OnInit, OnDestroy {
   cancelTigressPlay() {
       this.showTigressModal = false;
       this.selectedTigress = null;
+  }
+
+  // --- Pirate Action Handlers ---
+
+  submitRosieAction(playerId: string) {
+      if (this.roomId) {
+          this.socketService.submitPirateAction(this.roomId, { nextPlayerId: playerId });
+          this.showRosieModal = false;
+      }
+  }
+
+  toggleBahijDiscard(cardId: string) {
+      const idx = this.bahijDiscards.indexOf(cardId);
+      if (idx > -1) {
+          this.bahijDiscards.splice(idx, 1);
+      } else {
+          if (this.bahijDiscards.length < 2) {
+              this.bahijDiscards.push(cardId);
+          }
+      }
+  }
+
+  submitBahijAction() {
+      if (this.roomId && this.bahijDiscards.length === 2) {
+          this.socketService.submitPirateAction(this.roomId, { discardIds: this.bahijDiscards });
+          this.showBahijModal = false;
+      }
+  }
+
+  submitRascalAction(wager: number) {
+      if (this.roomId) {
+          this.socketService.submitPirateAction(this.roomId, { wager });
+          this.showRascalModal = false;
+      }
+  }
+
+  submitHarryAction(change: number) {
+      if (this.roomId) {
+          this.socketService.submitPirateAction(this.roomId, { bidChange: change });
+          this.showHarryModal = false;
+      }
   }
 
   get opponents() {

@@ -6,18 +6,135 @@
   padding: 1.5rem;
 }
 
+.main-card {
+  padding-top: 1.5rem;
+}
+
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 2.5rem;
   width: 100%;
-  max-width: 420px;
+  max-width: 450px;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
 }
 
+.tabs {
+    display: flex;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 1rem;
+
+    .tab-btn {
+        flex: 1;
+        background: transparent;
+        color: var(--text-muted);
+        border: none;
+        padding: 10px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: 0.2s;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -2px;
+
+        &:hover {
+            color: var(--text);
+        }
+
+        &.active {
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary);
+        }
+    }
+}
+
+.tab-content {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.logged-in-badge {
+    color: var(--primary);
+}
+
+.auth-toggle {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+
+    button {
+        flex: 1;
+        background: rgba(255,255,255,0.05);
+        color: #aaa;
+        border: 1px solid #444;
+        padding: 8px;
+        border-radius: 6px;
+        cursor: pointer;
+        
+        &.active {
+            background: var(--primary);
+            color: #000;
+            border-color: var(--primary);
+        }
+    }
+}
+
+.logged-in-view {
+    text-align: center;
+    padding: 20px;
+
+    .avatar-large {
+        width: 80px;
+        height: 80px;
+        background: var(--primary);
+        color: #000;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+        font-weight: bold;
+        margin: 0 auto 15px;
+        border: 3px solid #fff;
+    }
+}
+
+.table-container {
+    background: rgba(0,0,0,0.2);
+    border-radius: 8px;
+    overflow: hidden;
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+        
+        th, td {
+            padding: 10px;
+            font-size: 0.9rem;
+        }
+
+        th {
+            background: rgba(255,255,255,0.1);
+            color: var(--primary);
+        }
+
+        tr { border-bottom: 1px solid rgba(255,255,255,0.05); }
+        tr:last-child { border-bottom: none; }
+        
+        .player-name {
+            font-weight: bold;
+        }
+    }
+}
+
+/* Original styles below */
 .logo {
   display: flex;
   align-items: center;

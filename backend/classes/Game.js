@@ -1,6 +1,7 @@
 const Deck = require('./Deck');
 const Player = require('./Player');
 const Bot = require('./Bot');
+const userManager = require('../userManager');
 
 class Game {
   constructor(roomId, io) {
@@ -150,7 +151,7 @@ class Game {
       }
   }
 
-  handlePlayCard(playerId, cardId) {
+  handlePlayCard(playerId, cardId, playedAs) {
     if (this.phase !== 'playing') return;
     
     // Validate Current Trick State (Prevent playing if trick is already full/resolving)
@@ -173,10 +174,10 @@ class Game {
 
     // Play card
     player.hand.splice(cardIndex, 1);
-    this.currentTrick.push({ playerId, card });
+    this.currentTrick.push({ playerId, card, playedAs });
 
     // Broadcast play to all
-    this.io.in(this.id).emit('cardPlayed', { playerId, card });
+    this.io.in(this.id).emit('cardPlayed', { playerId, card, playedAs });
 
     // Check if trick complete
     if (this.currentTrick.length === this.players.length) {
@@ -184,22 +185,37 @@ class Game {
         // Emit full state update so the frontend sees the last card!
         this.emitState(); 
 
-        // Determine winner immediately for visual feedback
+        // Determine winner immediately for visual feedback.
+        // Keep this logic in sync with resolveTrick() so the UI highlight is correct.
         let winnerId = null;
         const krakenIndex = this.currentTrick.findIndex(t => t.card.type === 'kraken');
         const whaleIndex = this.currentTrick.findIndex(t => t.card.type === 'white_whale');
 
-        if (krakenIndex !== -1 || whaleIndex !== -1) {
-            // Determine which one was played LAST
-            const destroyerIndex = Math.max(krakenIndex, whaleIndex);
-            winnerId = this.currentTrick[destroyerIndex].playerId; // Provisional winner for next lead
-            
-            const message = (this.currentTrick[destroyerIndex].card.type === 'kraken') 
-                            ? 'KRAKEN! Stich zerstört.' 
-                            : 'WEIßER WAL! Stich zerstört.';
-            this.io.in(this.id).emit('notification', message);
+        let krakenEffect = false;
+        let whaleDestroyed = false;
+        if (krakenIndex !== -1) {
+            if (whaleIndex !== -1) {
+                // Both played: the later card decides which effect is active.
+                krakenEffect = (krakenIndex > whaleIndex);
+            } else {
+                krakenEffect = true;
+            }
+        }
+
+        if (!krakenEffect && whaleIndex !== -1) {
+            const numberCards = this.currentTrick.filter(t => t.card.type === 'suit');
+            if (numberCards.length === 0) {
+                whaleDestroyed = true;
+            }
+        }
+
+        if (krakenEffect) {
+            this.io.in(this.id).emit('notification', 'KRAKEN! Stich zerstört.');
+        } else if (whaleDestroyed) {
+            this.io.in(this.id).emit('notification', 'WEIßER WAL! Nur Sonderkarten - Stich abgeworfen.');
         } else {
-            winnerId = this.determineTrickWinner(this.currentTrick);
+            const winPlay = this.determineTrickWinner(this.currentTrick);
+            winnerId = winPlay.playerId;
             const winner = this.players.find(p => p.id === winnerId);
             if (winner) {
                  this.io.in(this.id).emit('notification', `${winner.name} gewinnt den Stich!`);
@@ -256,32 +272,48 @@ class Game {
   }
 
   resolveTrick() {
-    // 1. Check if Trick is Destroyed (Kraken ONLY)
-    // White Whale disables Kraken if played in the same trick (specials become unusable).
     const krakenIndex = this.currentTrick.findIndex(t => t.card.type === 'kraken');
     const whaleIndex = this.currentTrick.findIndex(t => t.card.type === 'white_whale');
 
-    let winnerId = null;
+    let winnerId = null; // Who actually wins the trick points
+    let nextPlayerId = null; // Who leads next
+
     let krakenEffect = false;
+    let whaleDestroyed = false;
 
     if (krakenIndex !== -1) {
         if (whaleIndex !== -1) {
-             // Both played: The LATER card takes effect.
-             // If Kraken > Whale, Kraken destroys trick.
-             // If Whale > Kraken, Whale logic applies (in determineTrickWinner).
              krakenEffect = (krakenIndex > whaleIndex);
         } else {
-             // Only Kraken played
              krakenEffect = true;
+        }
+    }
+
+    if (!krakenEffect && whaleIndex !== -1) {
+        const numberCards = this.currentTrick.filter(t => t.card.type === 'suit');
+        if (numberCards.length === 0) {
+            whaleDestroyed = true;
         }
     }
 
     if (krakenEffect) {
         this.io.in(this.id).emit('notification', 'KRAKEN! Stich zerstört.');
-        // No one wins the trick.
-        winnerId = this.currentTrick[krakenIndex].playerId;
+        // "Niemand gewinnt, aber der Spieler der den Stich gewonnen hätte, beginnt den nächsten."
+        const trickWithoutKraken = this.currentTrick.filter(t => t.card.type !== 'kraken');
+        if (trickWithoutKraken.length > 0) {
+            const wouldHaveWon = this.determineTrickWinner(trickWithoutKraken);
+            nextPlayerId = wouldHaveWon.playerId;
+        } else {
+            nextPlayerId = this.currentTrick[krakenIndex].playerId;
+        }
+    } else if (whaleDestroyed) {
+        this.io.in(this.id).emit('notification', 'WEIßER WAL! Nur Sonderkarten - Stich abgeworfen.');
+        // Stich abgeworfen (niemand gewinnt), Wal-Spieler beginnt den nächsten Stich
+        nextPlayerId = this.currentTrick[whaleIndex].playerId;
     } else {
-        winnerId = this.determineTrickWinner(this.currentTrick);
+        const winningPlay = this.determineTrickWinner(this.currentTrick);
+        winnerId = winningPlay.playerId;
+        nextPlayerId = winnerId;
         const winner = this.players.find(p => p.id === winnerId);
         
         if (winner) {
@@ -292,23 +324,69 @@ class Game {
             this.currentTrick.forEach(t => {
                 if (t.card.type === 'loot') {
                     const lootPlayer = this.players.find(p => p.id === t.playerId);
-                    if (lootPlayer) lootPlayer.bonusPoints += 20;
-                    winner.bonusPoints += 20;
+                    // Initialisiere bonusPoints, falls nicht vorhanden
+                    if (lootPlayer) lootPlayer.bonusPoints = (lootPlayer.bonusPoints || 0) + 20;
+                    winner.bonusPoints = (winner.bonusPoints || 0) + 20;
                 }
             });
+
+            // Weitere Bonuspunkte
+            if (whaleIndex === -1) { // Wal negiert alle Boni außer evtl 14er (wir vereinfachen hier: Wal negiert Skull King Boni)
+                const getEffectiveType = (t) => t.card.type === 'tigress' ? t.playedAs || 'pirate' : t.card.type;
+                
+                const hasSkullKing = this.currentTrick.find(t => getEffectiveType(t) === 'skullking');
+                const mermaids = this.currentTrick.filter(t => getEffectiveType(t) === 'mermaid');
+                const pirates = this.currentTrick.filter(t => getEffectiveType(t) === 'pirate');
+
+                if (mermaids.length > 0 && hasSkullKing && winningPlay.card.type === 'mermaid') {
+                    winner.bonusPoints = (winner.bonusPoints || 0) + 40; // Mermaid fängt SK (+40)
+                } else if (hasSkullKing && winningPlay.card.type === 'skullking') {
+                    winner.bonusPoints = (winner.bonusPoints || 0) + (pirates.length * 30); // SK fängt Piraten (+30 pro Pirat)
+                } else if (mermaids.length > 0 && getEffectiveType(winningPlay) === 'pirate') {
+                    winner.bonusPoints = (winner.bonusPoints || 0) + (mermaids.length * 20); // Pirat fängt Mermaid (+20 pro Meerjungfrau)
+                }
+            }
+
+            // Bonus für 14er im Stich (muss nicht die Siegerkarte sein)
+            const black14 = this.currentTrick.find(t => t.card.type === 'suit' && t.card.color === 'black' && t.card.value === 14);
+            const color14s = this.currentTrick.filter(t => t.card.type === 'suit' && t.card.color !== 'black' && t.card.value === 14);
+            
+            if (black14) {
+                winner.bonusPoints = (winner.bonusPoints || 0) + 20;
+            }
+            if (color14s.length > 0) {
+                winner.bonusPoints = (winner.bonusPoints || 0) + (color14s.length * 10);
+            }
+            
+            // Piraten Spezial-Fähigkeiten Auswertung
+            if (winningPlay.card.type === 'pirate' && winningPlay.card.pirateName) {
+                const pName = winningPlay.card.pirateName;
+                if (pName === 'Rosie D\'Laney' || pName === 'Bahij the Bandit' || pName === 'Rascal of Roatan' || pName === 'Harry the Giant' || pName === 'Tortuga Jack') {
+                    // Set phase to pirate_action and wait.
+                    // Except if this is the last trick (hand empty), maybe skip Rosie?
+                    // We'll handle that inside the pirate action logic.
+                    this.currentPlayerIndex = this.players.findIndex(p => p.id === nextPlayerId);
+                    this.lastTrickWinner = nextPlayerId;
+                    this.currentTrick = [];
+                    
+                    this.triggerPirateAction(winner, pName);
+                    return; // DO NOT continue normal trick resolution
+                }
+            }
         }
     }
 
     // Set next player
-    if (winnerId) {
-        this.currentPlayerIndex = this.players.findIndex(p => p.id === winnerId);
-        this.lastTrickWinner = winnerId;
-    } else {
-        // Fallback if something went wrong, stick to current (shouldn't happen with Kraken logic above)
+    if (nextPlayerId) {
+        this.currentPlayerIndex = this.players.findIndex(p => p.id === nextPlayerId);
+        this.lastTrickWinner = nextPlayerId;
     }
 
     this.currentTrick = [];
-    
+    this.finishTrickResolution();
+  }
+
+  finishTrickResolution() {
     // Check Round End
     if (this.players[0].hand.length === 0) {
         this.calculateScores();
@@ -320,6 +398,14 @@ class Game {
         setTimeout(() => {
              if (this.round >= this.maxRounds) {
                   this.phase = 'finished';
+                  // Calculate Stats
+                  const sortedPlayers = [...this.players].sort((a, b) => b.score - a.score);
+                  const winner = sortedPlayers[0];
+                  this.players.forEach(p => {
+                      if (!p.isBot) {
+                          userManager.updateStats(p.name, p.score, p.id === winner?.id);
+                      }
+                  });
              } else {
                   this.round++;
                   this.startRound();
@@ -328,9 +414,118 @@ class Game {
         }, 8000); // 8 Seconds to look at scores
 
     } else {
+        this.phase = 'playing'; // In case it was pirate_action
         this.emitState(); // Emit state for next trick
         this.checkNextToPlay(); // Trigger next player if bot
     }
+  }
+
+  triggerPirateAction(winner, pName) {
+      if (this.players[0].hand.length === 0) {
+          // If it's the last trick, some abilities don't make sense (Rosie, Bahij, Jack)
+          if (pName === 'Rosie D\'Laney' || pName === 'Bahij the Bandit' || pName === 'Tortuga Jack') {
+              this.finishTrickResolution();
+              return;
+          }
+      }
+
+      this.phase = 'pirate_action';
+      this.pirateActionData = {
+          pirate: pName,
+          playerId: winner.id
+      };
+
+      if (pName === 'Tortuga Jack') {
+          // Reveal top 2 cards of the remaining deck to ALL players
+          // Since deal() uses splice(0, count), the top is at index 0
+          const topCards = this.deck.cards.slice(0, 2);
+          this.io.in(this.id).emit('pirate_action_jack', { deck: topCards });
+          // Pause slightly before continuing so players can look
+          setTimeout(() => {
+              this.finishTrickResolution();
+          }, 5000); // 5 seconds exactly
+          return;
+      }
+      
+      if (pName === 'Bahij the Bandit') {
+           this.pirateActionData.drawnCards = this.deck.deal(2);
+           winner.hand.push(...this.pirateActionData.drawnCards);
+      }
+
+      this.emitState();
+      this.io.in(this.id).emit('notification', `${winner.name} aktiviert ${pName}!`);
+
+      if (winner.isBot) {
+          setTimeout(() => this.handleBotPirateAction(winner, pName), 2000);
+      }
+  }
+
+  handleBotPirateAction(bot, pName) {
+      if (this.phase !== 'pirate_action') return;
+      if (this.pirateActionData.playerId !== bot.id) return;
+      
+      let actionData = {};
+      if (pName === 'Rosie D\'Laney') {
+          // Check who is most dangerous or just lead self
+          actionData.nextPlayerId = bot.id; 
+      } else if (pName === 'Bahij the Bandit') {
+          // Cards are already in hand. Discard 2 lowest cards.
+          // Discard lowest: use bot's getCardPower for better discarding
+          bot.hand.sort((a, b) => bot.getCardPower(a) - bot.getCardPower(b));
+          actionData.discardIds = [bot.hand[0].id, bot.hand[1].id];
+      } else if (pName === 'Rascal of Roatan') {
+          // If we already perfectly achieved our bid and have empty/terrible hand, wager 10
+          if (bot.tricksWon === bot.bid && bot.hand.every(c => bot.getCardPower(c) < 50)) {
+              actionData.wager = 10;
+          } else {
+              actionData.wager = 0; // Better safe than sorry
+          }
+      } else if (pName === 'Harry the Giant') {
+          // Smart bid adjustments
+          // If we already overshot our bid, increase bid by 1
+          if (bot.tricksWon >= bot.bid) {
+              actionData.bidChange = 1;
+          } 
+          // If we are far away from our bid and hand is weak
+          else if (bot.bid > bot.tricksWon && bot.hand.length > 0) {
+              let avgPower = bot.hand.reduce((sum, c) => sum + bot.getCardPower(c), 0) / bot.hand.length;
+              if (avgPower < 50) {
+                  actionData.bidChange = -1; // Lower bid, we probably won't make it
+              } else {
+                  actionData.bidChange = 0;
+              }
+          } else {
+              actionData.bidChange = 0;
+          }
+      }
+
+      this.handlePirateAction(bot.id, actionData);
+  }
+
+  handlePirateAction(playerId, actionData) {
+      if (this.phase !== 'pirate_action') return;
+      if (this.pirateActionData.playerId !== playerId) return;
+
+      const pName = this.pirateActionData.pirate;
+      const player = this.players.find(p => p.id === playerId);
+
+      if (pName === 'Rosie D\'Laney') {
+          this.currentPlayerIndex = this.players.findIndex(p => p.id === actionData.nextPlayerId);
+      } else if (pName === 'Bahij the Bandit') {
+          if (actionData.discardIds && actionData.discardIds.length === 2) {
+              player.hand = player.hand.filter(c => !actionData.discardIds.includes(c.id));
+          }
+      } else if (pName === 'Rascal of Roatan') {
+          player.rascalWager = actionData.wager || 0; // 0, 10, or 20
+      } else if (pName === 'Harry the Giant') {
+          const change = actionData.bidChange || 0;
+          if (change === 1 || change === -1 || change === 0) {
+              player.bid = Math.max(0, player.bid + change); // Cannot deal bid < 0
+          }
+      }
+
+      this.pirateActionData = null;
+      this.finishTrickResolution();
   }
 
   determineTrickWinner(trick) {
@@ -351,11 +546,11 @@ class Game {
                       winner = numberCards[i];
                   }
               }
-              return winner.playerId;
+              return winner;
           } else {
               // No number cards played! (Only specials + whale)
               // The White Whale player wins.
-              return trick[whaleIndex].playerId;
+              return trick[whaleIndex];
           }
       }
 
@@ -376,26 +571,25 @@ class Game {
 
       // Mermaid beats Skull King
       if (sk && mermaid) {
-          if (mermaid) return mermaid.playerId;
-          return sk.playerId;
+          return mermaid; // Winning play!
       }
       
       // If SK present (and no Mermaid)
       if (sk) {
-          return sk.playerId;
+          return sk;
       }
       
       // If Pirate(s) present
       if (pirates.length > 0) {
            // First Pirate wins
-           return pirates[0].playerId;
+           return pirates[0];
       }
       
       // If Mermaid(s) present
       const mermaids = trick.filter(t => getEffectiveType(t) === 'mermaid');
       if (mermaids.length > 0) {
            // First Mermaid wins
-           return mermaids[0].playerId;
+           return mermaids[0];
       }
       
       // Black (Trump)
@@ -404,7 +598,7 @@ class Game {
       const blacks = trick.filter(t => t.card.type === 'suit' && t.card.color === 'black');
       if (blacks.length > 0) {
           blacks.sort((a, b) => b.card.value - a.card.value);
-          return blacks[0].playerId;
+          return blacks[0];
       }
       
       // Keep original logic for lead color
@@ -421,12 +615,12 @@ class Game {
          const suitCards = trick.filter(t => t.card.type === 'suit' && t.card.color === leadColor);
          if (suitCards.length > 0) {
              suitCards.sort((a, b) => b.card.value - a.card.value);
-             return suitCards[0].playerId;
+             return suitCards[0];
          }
       }
       
       // Fallback (only escapes?): First player wins
-      return trick[0].playerId;
+      return trick[0];
   }
 
   calculateScores() {
@@ -444,10 +638,30 @@ class Game {
               else roundScore = diff * -10;
           }
           
-          const totalRoundScore = roundScore + (p.bonusPoints || 0);
+          let totalRoundScore = roundScore;
+          
+          // Bonus points are only awarded if the bid was exact! (Except Loot which was maybe added already? Wait! standard rules: Loot also requires exact bid)
+          // To be completely rules-accurate: All bonuses (capture Pirate/SK, 14s, Loot) require exact bid
+          // BUT wait! Rascal wager also requires exact bid to WIN, otherwise LOSE.
+          if (diff === 0) {
+              totalRoundScore += (p.bonusPoints || 0);
+              if (p.rascalWager) {
+                  totalRoundScore += p.rascalWager;
+              }
+          } else {
+              // Failed bid: lose Rascal wager
+              if (p.rascalWager) {
+                  totalRoundScore -= p.rascalWager;
+              }
+          }
+
           p.lastRoundScore = totalRoundScore;
           p.score += totalRoundScore;
           p.scoresHistory.push({ round: this.round, score: totalRoundScore, total: p.score, bid: p.bid, won: p.tricksWon });
+
+          // Reset bonuses for next round
+          p.bonusPoints = 0;
+          p.rascalWager = 0;
       });
   }
 
@@ -484,9 +698,10 @@ class Game {
               hand: p.hand,
               currentTrick: this.currentTrick,
               turnIndex: this.currentPlayerIndex,
-              me: { id: p.id, bid: p.bid, score: p.score, tricksWon: p.tricksWon, lastRoundScore: p.lastRoundScore },
+              me: { id: p.id, bid: p.bid, score: p.score, tricksWon: p.tricksWon, lastRoundScore: p.lastRoundScore, bonusPoints: p.bonusPoints },
               players: publicPlayers,
-              lastWinnerId: this.lastTrickWinner
+              lastWinnerId: this.lastTrickWinner,
+              pirateActionData: this.pirateActionData
           });
       });
   }

@@ -21,17 +21,30 @@ export class CardComponent {
     if (!this.card) return 'card-back';
     
     let cls = `card-${this.size} `;
+    
+    // Add base type/color classes
     if (this.card.type === 'suit') {
       cls += (this.card.color || '');
     } else {
       cls += this.card.type;
-    }
-
-    if (this.playedAs) {
-        cls += ` as-${this.playedAs}`;
+      
+      // Handle named pirates
+      if (this.card.type === 'pirate' && this.card.pirateName) {
+        // e.g. "Rosie D'Laney" -> "rosie"
+        const pName = this.card.pirateName.split(' ')[0].toLowerCase().replace(/[^a-z]/g, '');
+        cls += ` pirate-${pName}`;
+      }
     }
     
-    if (this.selectable) cls += ' selectable';
+    // Crucially, add the playedAs class properly prefixed
+    if (this.playedAs) {
+      cls += ` as-${this.playedAs}`;
+    }
+    
+    if (this.selectable) {
+        cls += ' selectable';
+    }
+    
     return cls;
   }
 
@@ -62,7 +75,15 @@ export class CardComponent {
     }
     switch (this.card.type) {
       case 'skullking': return '👑'; 
-      case 'pirate': return '⚔️';
+      case 'pirate':
+        if (this.card.pirateName) {
+          if (this.card.pirateName.includes('Rosie')) return '💃';
+          if (this.card.pirateName.includes('Bahij')) return '🥷';
+          if (this.card.pirateName.includes('Rascal')) return '🐒';
+          if (this.card.pirateName.includes('Harry')) return '🦍';
+          if (this.card.pirateName.includes('Tortuga')) return '🏴‍☠️';
+        }
+        return '⚔️';
       case 'mermaid': return '🧜‍♀️';
       case 'tigress': return '🐯';
       case 'kraken': return '🦑';
@@ -77,6 +98,9 @@ export class CardComponent {
     if (!this.card) return 'assets/cards/back.png';
     if (this.card.type === 'suit') {
         return `assets/cards/${this.card.color}-${this.card.value}.png`;
+    }
+    if (this.card.type === 'tigress' && this.playedAs) {
+        return `assets/cards/${this.playedAs}.png`;
     }
     return `assets/cards/${this.card.type}.png`;
   }

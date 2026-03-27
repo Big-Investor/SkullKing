@@ -4,6 +4,7 @@ const { Server } = require('socket.io');
 const path = require('path');
 const crypto = require('crypto');
 const Game = require('./classes/Game'); // Importiere Game Logik
+const userManager = require('./userManager'); // Import UserManager
 
 const app = express();
 const server = http.createServer(app);
@@ -36,30 +37,67 @@ app.post('/api/rooms', (req, res) => {
 });
 
 app.get('/api/rooms/:id', (req, res) => {
-  res.json({ exists: games.has(req.params.id) });
+  const checkId = req.params.id.toString().trim().toLowerCase();
+  const exists = games.has(checkId);
+  console.log(`[API checkRoom] Check ID: '${checkId}', Exists: ${exists}`);
+  res.json({ exists: exists });
 });
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
+
+// ─── User API ─────────────────────────────────────────────────────────────────
+app.post('/api/register', (req, res) => {
+    const { username, password } = req.body;
+    if (!username || !password) return res.status(400).json({ error: 'Username und Passwort erforderlich' });
+    
+    const result = userManager.registerUser(username, password);
+    if (!result.success) return res.status(400).json({ error: result.message });
+    res.json({ success: true, username: result.username });
+});
+
+app.post('/api/login', (req, res) => {
+    const { username, password } = req.body;
+    if (!username || !password) return res.status(400).json({ error: 'Username und Passwort erforderlich' });
+    
+    const result = userManager.loginUser(username, password);
+    if (!result.success) return res.status(401).json({ error: result.message });
+    res.json({ success: true, username: result.username });
+});
+
+app.get('/api/leaderboard', (req, res) => {
+    res.json(userManager.getLeaderboard());
+});
 
 // ─── Socket.io ────────────────────────────────────────────────────────────────
 io.on('connection', (socket) => {
   console.log(`[Socket] connected: ${socket.id}`);
   
-  socket.on('room:join', ({ roomId, playerName }) => {
+  socket.on('room:join', ({ roomId, playerName, isGuest }) => {
+    roomId = roomId.toString().trim().toLowerCase();
     const game = games.get(roomId);
+    
+    console.log(`[Join Attempt] Room: ${roomId}, Player: ${playerName}, isGuest: ${isGuest}, GameFound: ${!!game}`);
+
     if (!game) {
       socket.emit('room:not_found');
       return;
     }
 
+    if (isGuest && userManager.isNameRegistered(playerName)) {
+        console.log(`[Join Failed] Guest Name Registered: ${playerName}`);
+        socket.emit('errorNotification', 'Dieser Name ist registriert. Bitte wähle einen anderen Namen oder logge dich ein.');
+        return;
+    }
+
     // Spieler hinzufügen
     if (game.addPlayer(socket.id, playerName)) {
         socket.join(roomId);
-        console.log(`[Game ${roomId}] ${playerName} joined`);
+        console.log(`[Game ${roomId}] ${playerName} joined successfully`);
         
         // Allen den neuen Status senden
         game.emitState();
     } else {
+        console.log(`[Join Failed] Game addPlayer rejected: ${playerName} (Full or Started)`);
         socket.emit('errorNotification', 'Room full or game already started');
     }
   });
@@ -84,6 +122,11 @@ io.on('connection', (socket) => {
   socket.on('game:play', ({ roomId, cardId, playedAs }) => {
       const game = games.get(roomId);
       if (game) game.handlePlayCard(socket.id, cardId, playedAs);
+  });
+
+  socket.on('game:pirate_action', ({ roomId, actionData }) => {
+      const game = games.get(roomId);
+      if (game) game.handlePirateAction(socket.id, actionData);
   });
 
   socket.on('disconnect', () => {

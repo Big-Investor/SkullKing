@@ -2,6 +2,12 @@
     <div class="card-image-bg" *ngIf="hasImage" [style.backgroundImage]="'url(' + imagePath + ')'"></div>
     <img [src]="imagePath" (load)="hasImage = true" (error)="hasImage = false" style="display: none;">
 
+    <!-- Played As Badge for Tigress/etc. -->
+    <div class="played-as-badge" *ngIf="card?.type === 'tigress' && playedAs"
+         [ngClass]="{'is-pirate': playedAs === 'pirate', 'is-escape': playedAs === 'escape'}">
+        {{ playedAs === 'pirate' ? 'Als Pirat' : 'Als Flucht' }}
+    </div>
+
     <div class="card-inner" *ngIf="!hasImage">
         <div class="top-left">
             <span class="value">{{ displayValue }}</span>
@@ -11,6 +17,7 @@
         <div class="center-content">
             <span class="big-icon">{{ icon }}</span>
             <span class="big-value" *ngIf="displayValue">{{ displayValue }}</span>
+            <span class="pirate-name" *ngIf="card?.pirateName">{{ card.pirateName }}</span>
         </div>
 
         <div class="bottom-right">
