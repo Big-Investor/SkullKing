@@ -21,16 +21,18 @@ function loadUsers() {
 
 function saveUsers() {
     try {
+        const dir = path.dirname(dataFile);
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
         fs.writeFileSync(dataFile, JSON.stringify(users, null, 2), 'utf8');
     } catch (e) {
-        console.error('Error saving users:', e);
-    }
+        console.error('Error saving users:', e);    }
 }
 
 function hashPassword(password) {
     return crypto.createHash('sha256').update(password).digest('hex');
 }
-
 function registerUser(username, password) {
     username = username.trim();
     const lowerName = username.toLowerCase();

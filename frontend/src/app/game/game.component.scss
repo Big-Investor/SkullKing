@@ -1,21 +1,24 @@
 // Colors & Theme
-$bg-color: #263238; // Dark Blue Grey
-$table-color: #3E2723; // Dark Wood
-$text-light: #ECEFF1;
-$text-muted: #B0BEC5;
-$accent: #FFD54F; // Gold
-$secondary: #4DD0E1; // Cyan
+$bg-color: #12100e; // Dark Pirate/Tavern feel
+$table-color: #3E2723; // Dark Wood Backup
+$text-light: #e8e8e8;
+$text-muted: #ccc;
+$accent: #d4af37; // Gold
+$secondary: #8b6b43; // Wood/Brown
+$hover-accent: #f1cf5b;
 
 .game-container {
     height: 100vh;
     width: 100vw;
     background-color: $bg-color; // Fallback
-    background: radial-gradient(circle at center, #37474F 0%, #102027 100%);
+    background: radial-gradient(circle at center, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.8) 100%), 
+                url('https://www.transparenttextures.com/patterns/black-scales.png');
+    background-color: #12100e;
     color: $text-light;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Inter', sans-serif;
 }
 
 // Notifications
@@ -56,8 +59,11 @@ $secondary: #4DD0E1; // Cyan
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: rgba(0,0,0,0.4);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    background: linear-gradient(to bottom, rgba(44,36,30,0.9), rgba(20,15,12,0.9));
+    border-bottom: 2px solid $secondary;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.8);
+    position: relative;
+    z-index: 100;
     
     .round-info {
         display: flex;
@@ -65,38 +71,59 @@ $secondary: #4DD0E1; // Cyan
         gap: 15px;
     }
     
-    h2 { margin: 0; font-size: 1.2rem; }
+    h2 { 
+        margin: 0; 
+        font-family: 'Pirata One', serif;
+        font-size: 1.8rem; 
+        color: $accent;
+        letter-spacing: 1px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+    }
     .phase-badge {
-        background: $accent;
-        color: #3E2723;
-        padding: 4px 10px;
-        border-radius: 12px;
-        font-size: 0.8rem;
+        background: linear-gradient(to bottom, #d4af37, #b28d22);
+        color: #111;
+        padding: 4px 12px;
+        border-radius: 4px;
+        font-size: 0.9rem;
         text-transform: uppercase;
         font-weight: bold;
-        letter-spacing: 0.5px;
+        letter-spacing: 1px;
+        border: 1px solid #5a4511;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.5);
     }
     .btn-help {
-        background: $secondary;
-        border: none;
-        color: #fff;
-        width: 32px;
-        height: 32px;
+        background: transparent;
+        border: 2px solid $accent;
+        color: $accent;
+        width: 36px;
+        height: 36px;
         border-radius: 50%;
         cursor: pointer;
         font-weight: bold;
         font-size: 1.2rem;
-        transition: transform 0.2s;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         
         &:hover {
             transform: scale(1.1);
-            background: lighten($secondary, 10%);
+            background: rgba(212, 175, 55, 0.2);
+            color: $hover-accent;
+            border-color: $hover-accent;
+            box-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
         }
     }
 
     .scores {
-        font-weight: bold;
-        font-size: 1.1rem;
+        font-family: 'Pirata One', serif;
+        font-size: 1.5rem;
+        color: $text-light;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        border: 1px solid $secondary;
+        padding: 5px 15px;
+        border-radius: 6px;
+        background: rgba(0,0,0,0.4);
     }
 }
 
@@ -113,14 +140,14 @@ $secondary: #4DD0E1; // Cyan
     right: -400px;
     width: 350px;
     height: 100vh;
-    background: #1a1a1a;
+    background: linear-gradient(135deg, rgba(44,36,30,0.98), rgba(20,15,12,0.98));
     color: #eee;
     z-index: 2000;
     padding: 20px;
-    box-shadow: -5px 0 15px rgba(0,0,0,0.5);
+    box-shadow: -5px 0 25px rgba(0,0,0,0.8);
     transition: right 0.3s ease-out;
     overflow-y: auto;
-    border-left: 2px solid $accent;
+    border-left: 2px solid $secondary;
 
     &.open {
         right: 0;
@@ -132,17 +159,22 @@ $secondary: #4DD0E1; // Cyan
         right: 20px;
         background: none;
         border: none;
-        color: #888;
+        color: $accent;
         font-size: 2rem;
         cursor: pointer;
-        &:hover { color: #fff; }
+        transition: color 0.2s;
+        &:hover { color: $hover-accent; text-shadow: 0 0 8px rgba(212, 175, 55, 0.5); }
     }
 
     h3 {
         color: $accent;
-        border-bottom: 1px solid #444;
+        font-family: 'Pirata One', serif;
+        font-size: 2rem;
+        letter-spacing: 1px;
+        border-bottom: 2px dashed rgba(139, 107, 67, 0.5);
         padding-bottom: 10px;
         margin-top: 0;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
     }
     
     ul {
@@ -154,9 +186,11 @@ $secondary: #4DD0E1; // Cyan
         display: flex;
         align-items: center; // Align items vertically in center
         margin-bottom: 20px;
-        padding: 10px;
-        background: rgba(255,255,255,0.05);
+        padding: 15px 10px;
+        background: rgba(0,0,0,0.4);
+        border: 1px solid $secondary;
         border-radius: 8px;
+        box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
         
         .help-card-preview {
             margin-right: 20px;
@@ -167,9 +201,17 @@ $secondary: #4DD0E1; // Cyan
         }
 
         .desc {
-            font-size: 0.9rem;
+            font-size: 0.95rem;
+            line-height: 1.4;
             flex: 1;
-            strong { color: $secondary; font-size: 1.1rem; display: block; margin-bottom: 4px; }
+            strong { 
+                color: $accent; 
+                font-family: 'Pirata One', serif;
+                font-size: 1.4rem; 
+                display: block; 
+                margin-bottom: 4px; 
+                letter-spacing: 1px;
+            }
         }
     }
 }
@@ -181,10 +223,11 @@ $secondary: #4DD0E1; // Cyan
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    padding-top: 30px;
+    padding-top: 50px; // Increased padding to prevent overlap with "Am Zug" label and HUD
     gap: 40px;
     
     .opponent {
+        position: relative; // Ensure absolute children like ::after label position correctly
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -204,29 +247,34 @@ $secondary: #4DD0E1; // Cyan
             width: 60px;
             height: 60px;
             border-radius: 50%;
-            background: #546E7A;
-            border: 3px solid #78909C;
+            background: linear-gradient(135deg, #4a3b2c, #2a1b0c);
+            border: 3px solid $secondary;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: bold;
-            font-size: 1.5rem;
+            font-family: 'Pirata One', serif;
+            font-size: 1.8rem;
             margin-bottom: 8px;
-            color: white;
-            text-shadow: 1px 1px 2px black;
+            color: $accent;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.5);
         }
         
         .name {
             font-weight: 600;
             margin-bottom: 4px;
+            font-family: 'Inter', sans-serif;
+            letter-spacing: 0.5px;
         }
 
         .stats {
-            font-size: 0.8rem;
-            color: #B0BEC5;
-            background: rgba(0,0,0,0.3);
-            padding: 2px 8px;
-            border-radius: 10px;
+            font-size: 0.85rem;
+            color: $text-muted;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(139, 107, 67, 0.4);
+            padding: 3px 10px;
+            border-radius: 12px;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.5);
         }
 
         .mini-cards {
@@ -238,10 +286,10 @@ $secondary: #4DD0E1; // Cyan
                 width: 14px;
                 height: 20px;
                 background: linear-gradient(45deg, #3e2723, #4e342e);
-                border: 1px solid #fff;
+                border: 1px solid #d4af37;
                 margin-right: -8px;
                 border-radius: 2px;
-                box-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+                box-shadow: 1px 1px 3px rgba(0,0,0,0.6);
                 &:last-child { margin-right: 0; }
             }
         }
@@ -251,14 +299,25 @@ $secondary: #4DD0E1; // Cyan
 // Table
 .game-table {
     flex: 2;
-    background: rgba(255,255,255,0.03); // Felt subtle overlay
-    border-radius: 50%;
+    background: radial-gradient(circle at center, rgba(62, 39, 35, 0.4), rgba(46, 26, 22, 0.8));
+    border: 3px solid rgba(139, 107, 67, 0.3); // secondary with opacity
+    border-radius: 50%; // Keep the table oval
     margin: 10px 5vw;
     position: relative;
     display: flex;
     justify-content: center;
     align-items: center;
-    box-shadow: inset 0 0 100px rgba(0,0,0,0.5);
+    box-shadow: inset 0 0 50px rgba(0,0,0,0.8), 0 10px 30px rgba(0,0,0,0.6);
+    
+    // Add subtle felt/wood texture overlay to table
+    &::after {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        border-radius: 50%;
+        background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><filter id="noiseFilter"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noiseFilter)" opacity="0.04"/></svg>');
+        pointer-events: none;
+    }
 
     .deck-area-corner {
         position: absolute;
@@ -273,86 +332,85 @@ $secondary: #4DD0E1; // Cyan
             width: 80px;
             height: 120px;
             
+            // Subtler shadow for the whole stack to lift it from table
+            filter: drop-shadow(4px 4px 10px rgba(0,0,0,0.8));
+            
             .deck-card {
                 position: absolute;
                 top: 0;
                 left: 0;
                 width: 100%;
                 height: 100%;
-                border-radius: 12px;
-                border: 1px solid rgba(255,255,255,0.2);
-                box-shadow: 2px 2px 8px rgba(0,0,0,0.5);
-                background: repeating-conic-gradient(#3E2723 0 15deg, #4E342E 0 30deg);
+                border-radius: 8px; // matched standard card look
+                border: 2px solid #5d4037; // darker wood-like border
+                box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+                // Enhanced pirate back pattern
+                background: 
+                    linear-gradient(135deg, rgba(31,20,14,0.8) 25%, transparent 25%) -10px 0, 
+                    linear-gradient(225deg, rgba(31,20,14,0.8) 25%, transparent 25%) -10px 0, 
+                    linear-gradient(315deg, rgba(31,20,14,0.8) 25%, transparent 25%), 
+                    linear-gradient(45deg, rgba(31,20,14,0.8) 25%, transparent 25%);	
+                background-size: 20px 20px;
+                background-color: #3e2723;
                 
-                &.card-3 { transform: translate(-4px, 4px) rotate(-2deg); }
-                &.card-2 { transform: translate(-2px, 2px) rotate(-1deg); }
+                // Add an elegant inner gold/brown line to look like a real card back
+                &::after {
+                    content: '';
+                    position: absolute;
+                    top: 4px; left: 4px; right: 4px; bottom: 4px;
+                    border: 1px solid rgba(212, 175, 55, 0.3); // faintly gold
+                    border-radius: 4px;
+                    pointer-events: none;
+                }
+                
+                // More dynamic stacking rotation to look imperfect
+                &.card-3 { transform: translate(-6px, 6px) rotate(-4deg); box-shadow: 2px 2px 5px rgba(0,0,0,0.5); }
+                &.card-2 { transform: translate(-3px, 3px) rotate(-1.5deg); box-shadow: 2px 2px 5px rgba(0,0,0,0.5); }
                 &.card-1 { 
                     transform: translate(0, 0); 
+                    box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
                     app-card { pointer-events: none; transform: scale(0.8); transform-origin: top left;}
                 }
             }
         }
+    }
+    
+    .tortuga-modal {
+        max-width: 90vw !important;
+        width: 800px;
         
-        .tortuga-reveal {
-            position: absolute;
-            top: -10px;
-            left: 100px;
+        .tortuga-card-grid {
             display: flex;
-            flex-direction: column;
-            background: linear-gradient(135deg, #1c262c 0%, #37474f 100%);
-            padding: 12px 18px;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.4);
             border-radius: 12px;
-            border: 2px solid #dab333;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(218, 179, 51, 0.15);
-            animation: slideInLeft 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-            z-index: 50;
-            width: max-content;
+            min-height: 120px;
+            max-height: 400px;
+            overflow-y: auto;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
             
-            .reveal-header {
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                color: #dab333;
-                font-size: 0.95rem;
-                margin-bottom: 15px;
-                font-weight: bold;
-                letter-spacing: 0.5px;
-                text-transform: uppercase;
-                border-bottom: 1px solid rgba(218, 179, 51, 0.3);
-                padding-bottom: 8px;
-                text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-                
-                .icon {
-                    font-size: 1.3rem;
-                }
+            /* Custom Scrollbar for the deck view */
+            &::-webkit-scrollbar {
+                width: 8px;
+            }
+            &::-webkit-scrollbar-track {
+                background: rgba(0, 0, 0, 0.2);
+                border-radius: 4px;
+            }
+            &::-webkit-scrollbar-thumb {
+                background: $secondary;
+                border-radius: 4px;
             }
             
-            .cards {
-                display: flex;
-                padding-left: 10px;
-                padding-right: 10px;
-
-                .peek-card {
-                    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), z-index 0s;
-                    margin-left: -25px;
-                    box-shadow: -4px 4px 8px rgba(0,0,0,0.4);
-                    border-radius: 8px; 
-                    
-                    &:first-child {
-                        margin-left: 0;
-                    }
-
-                    &:hover {
-                        transform: translateY(-15px) scale(1.15) rotate(-2deg);
-                        z-index: 20 !important;
-                        box-shadow: -6px 8px 15px rgba(0,0,0,0.6);
-                    }
-                }
-
-                @for $i from 1 through 10 {
-                    .peek-card:nth-child(#{$i}) {
-                        z-index: $i;
-                    }
+            .peek-card {
+                transition: transform 0.2s;
+                &:hover {
+                    transform: scale(1.1) translateY(-5px);
+                    z-index: 10;
                 }
             }
         }
@@ -400,34 +458,41 @@ $secondary: #4DD0E1; // Cyan
 
         .btn-bot {
             padding: 10px 15px;
-            background: rgba($secondary, 0.4);
-            border: 1px solid rgba($secondary, 0.6);
-            color: $text-light;
+            background: linear-gradient(to bottom, rgba($secondary, 0.4), rgba($secondary, 0.2));
+            border: 1px solid rgba($accent, 0.6);
+            color: $accent;
+            font-family: 'Pirata One', serif;
+            font-size: 1.2rem;
+            letter-spacing: 1px;
             border-radius: 6px;
             cursor: pointer;
             transition: all 0.2s;
             &:hover {
-                background: $secondary;
+                background: linear-gradient(to bottom, rgba($secondary, 0.6), rgba($secondary, 0.4));
                 transform: translateY(-2px);
+                border-color: $accent;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.5);
             }
         }
     }
 
     .btn-start {
         padding: 15px 40px;
-        font-size: 1.5rem;
-        background: linear-gradient(to bottom, $accent, #FBC02D);
-        border: none;
+        font-size: 2rem;
+        font-family: 'Pirata One', serif;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        background: linear-gradient(to bottom, $accent, #d4af37);
+        border: 2px solid #fff;
         border-radius: 8px;
         cursor: pointer;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        font-weight: bold;
-        color: #3E2723;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.5), inset 0 0 10px rgba(255,255,255,0.5);
+        color: #1a1005;
         transition: transform 0.2s, box-shadow 0.2s;
         
-        &:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.4); }
-        &:active { transform: translateY(1px); }
-        &:disabled { opacity: 0.5; cursor: not-allowed; }
+        &:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.6), inset 0 0 15px rgba(255,255,255,0.8); background: linear-gradient(to bottom, #f1cf5b, $accent); }
+        &:active:not(:disabled) { transform: translateY(1px); }
+        &:disabled { opacity: 0.5; cursor: not-allowed; border-color: #666; background: #666; color: #ccc; }
     }
 
     .table-center {
@@ -510,22 +575,32 @@ $secondary: #4DD0E1; // Cyan
     }
 
     .waiting-msg {
-        font-size: 1.5rem;
+        font-family: 'Pirata One', serif;
+        font-size: 2rem;
+        letter-spacing: 2px;
+        color: $text-muted;
         animation: pulse 2s infinite;
+        text-transform: uppercase;
     }
 
     .bidding-overlay {
         position: absolute;
-        background: rgba(33, 33, 33, 0.95);
+        background: linear-gradient(135deg, rgba(44,36,30,0.98), rgba(20,15,12,0.98));
         padding: 40px 60px;
-        border-radius: 16px;
+        border-radius: 12px;
         text-align: center;
         z-index: 50;
-        border: 2px solid $accent;
-        box-shadow: 0 20px 50px rgba(0,0,0,0.8);
-        backdrop-filter: blur(5px);
+        border: 2px solid $secondary;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.8), inset 0 0 20px rgba(0,0,0,0.5);
 
-        h3 { margin-bottom: 20px; font-size: 1.5rem; }
+        h3 { 
+            margin-bottom: 20px; 
+            font-size: 2.5rem; 
+            font-family: 'Pirata One', serif;
+            color: $accent;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
 
         .bid-controls {
             display: flex;
@@ -535,25 +610,39 @@ $secondary: #4DD0E1; // Cyan
             margin: 30px 0;
             
             button {
-                width: 50px;
-                height: 50px;
-                font-size: 1.8rem;
+                width: 60px;
+                height: 60px;
+                font-family: 'Pirata One', serif;
+                font-size: 2.2rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
                 border-radius: 50%;
-                border: none;
-                background: #546E7A;
-                color: white;
+                border: 2px solid #5a4511;
+                background: linear-gradient(to bottom, #d4af37, #b28d22);
+                color: #111;
                 cursor: pointer;
-                transition: background 0.2s;
-                &:hover:not(:disabled) { background: #78909C; }
+                transition: all 0.2s;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.5);
+                
+                &:hover:not(:disabled) { 
+                    background: linear-gradient(to bottom, #f1cf5b, #d4af37);
+                    transform: translateY(-2px);
+                    box-shadow: 0 6px 10px rgba(0,0,0,0.6);
+                }
+                &:active:not(:disabled) {
+                    transform: translateY(1px);
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.6);
+                }
                 &:disabled { opacity: 0.3; cursor: not-allowed; }
             }
 
             .bid-value {
-                font-size: 4rem;
-                font-weight: 900;
+                font-family: 'Pirata One', serif;
+                font-size: 4.5rem;
                 color: $accent;
                 min-width: 80px;
-                text-shadow: 0 0 10px rgba(255, 213, 79, 0.3);
+                text-shadow: 2px 2px 5px rgba(0,0,0,0.8), 0 0 15px rgba(212, 175, 55, 0.4);
             }
         }
 
@@ -599,11 +688,30 @@ $secondary: #4DD0E1; // Cyan
     padding-bottom: 40px;
     margin-bottom: -50px; // Hide bottom of cards slightly if needed, or overlap hud
     overflow: visible;
+    position: relative;
+
+    // A wooden plank underneath the cards to act as a stand
+    &::before {
+        content: '';
+        position: absolute;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100vw;
+        height: 60px;
+        background: linear-gradient(to bottom, #3e2723, #1e110a);
+        border-top: 3px solid #5d4037;
+        box-shadow: 0 -10px 20px rgba(0, 0, 0, 0.8);
+        border-radius: 50% 50% 0 0 / 10px 10px 0 0;
+        z-index: 0;
+        pointer-events: none;
+    }
 
     .hand-wrapper {
         display: flex;
         justify-content: center;
         align-items: flex-end;
+        z-index: 1;
     }
 
     .hand-card-container {
@@ -615,8 +723,6 @@ $secondary: #4DD0E1; // Cyan
             z-index: 100 !important; // Bring to front
             transform: translateY(-40px) scale(1.1) !important; // Pop up
             cursor: pointer;
-            
-            // Adjust siblings (simpler via CSS usually requires has selector or js, but this is simple hover)
         }
     }
 }
@@ -677,66 +783,85 @@ $secondary: #4DD0E1; // Cyan
 .summary-overlay {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.85);
+    background: radial-gradient(circle at center, rgba(30, 20, 15, 0.95), rgba(10, 5, 5, 0.98));
     z-index: 3000;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(8px);
     animation: fadeIn 0.5s;
-    color: white;
+    color: #e8e8e8;
 
     h2, h1 {
-        font-size: 2.5rem;
+        font-family: 'Pirata One', serif;
+        font-size: 4rem;
         color: $accent;
         margin-bottom: 30px;
-        text-shadow: 0 0 10px rgba($accent, 0.4);
+        text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.8), 0 0 20px rgba($accent, 0.3);
+        letter-spacing: 3px;
+        text-transform: uppercase;
     }
     
     table {
         width: 80%;
         max-width: 800px;
         border-collapse: collapse;
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 10px;
+        background: rgba(30, 20, 15, 0.8);
+        border-radius: 12px;
         overflow: hidden;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        border: 2px solid $secondary;
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(0, 0, 0, 0.5);
 
         th, td {
             padding: 15px;
             text-align: center;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            border-bottom: 1px solid rgba(139, 107, 67, 0.3); // secondary color low opacity
+            font-family: 'Inter', sans-serif;
+            font-size: 1.1rem;
         }
         
         th {
-            background: rgba($accent, 0.2);
+            background: linear-gradient(to right, rgba($secondary, 0.2), rgba($secondary, 0.4), rgba($secondary, 0.2));
             color: $accent;
-            font-size: 1.1rem;
+            font-size: 1.3rem;
+            font-family: 'Pirata One', serif;
+            letter-spacing: 1px;
             text-transform: uppercase;
+            border-bottom: 2px solid $secondary;
         }
 
         tr:last-child td { border-bottom: none; }
         
-        tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+        tr:nth-child(even) { background: rgba(0, 0, 0, 0.3); }
+        
+        // Highlight current player (can be done logic side, but here's subtle hover)
+        tr:hover {
+            background: rgba($accent, 0.1);
+        }
     }
     
     .loading-bar {
         margin-top: 40px;
-        font-size: 1.2rem;
-        color: $text-muted;
+        font-size: 1.5rem;
+        font-family: 'Pirata One', serif;
+        color: $accent;
+        letter-spacing: 2px;
         animation: pulse 1s infinite alternate;
+        text-shadow: 0 0 5px rgba($accent, 0.5);
     }
 
     &.finished {
-        background: linear-gradient(135deg, rgba(0,0,0,0.9), rgba(62, 39, 35, 0.95));
+        background: radial-gradient(circle at center, rgba(40, 25, 20, 0.95), rgba(5, 5, 5, 0.98));
         
         .winner-display {
-            font-size: 3rem;
-            color: $secondary;
+            font-size: 4rem;
+            color: $accent;
             margin-bottom: 40px;
-            font-weight: bold;
-            animation: popIn 1s;
+            font-weight: normal;
+            font-family: 'Pirata One', serif;
+            animation: popIn 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-shadow: 0 0 20px rgba($accent, 0.5);
         }
     }
 }
@@ -814,17 +939,25 @@ $secondary: #4DD0E1; // Cyan
 }
 
 .modal {
-    background: #263238;
+    background: linear-gradient(135deg, rgba(44,36,30,0.98), rgba(20,15,12,0.98));
     padding: 30px 40px;
     border-radius: 12px;
-    border: 2px solid #FFD54F; /* Accent */
+    border: 2px solid $secondary;
     text-align: center;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8), inset 0 0 20px rgba(0,0,0,0.5);
     color: white;
     max-width: 90vw;
     animation: popIn 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
 
-    h2 { margin-bottom: 15px; color: #FFD54F; font-size: 1.8rem; text-transform: uppercase; }
+    h2 { 
+        margin-bottom: 15px; 
+        color: $accent; 
+        font-family: 'Pirata One', serif;
+        font-size: 2.5rem; 
+        text-transform: uppercase; 
+        letter-spacing: 2px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+    }
     p { font-size: 1.1rem; margin-bottom: 25px; line-height: 1.5; color: #eceff1; }
 }
 
@@ -839,9 +972,9 @@ $secondary: #4DD0E1; // Cyan
 
 .pirate-modal {
     background: 
-        linear-gradient(145deg, rgba(28,38,44,0.95), rgba(55,71,79,0.98)),
+        linear-gradient(145deg, rgba(44,36,30,0.98), rgba(20,15,12,0.98)),
         repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.05) 10px, rgba(0,0,0,0.05) 20px);
-    border: 3px solid #ffcc00;
+    border: 3px solid $accent;
     box-shadow: 0 15px 40px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(255, 204, 0, 0.15);
     border-radius: 16px;
     padding: 30px 40px;
@@ -854,21 +987,22 @@ $secondary: #4DD0E1; // Cyan
         position: absolute;
         top: 0; left: 0; right: 0;
         height: 6px;
-        background: linear-gradient(90deg, #ff9800, #ffeb3b, #ff9800);
+        background: linear-gradient(90deg, #d4af37, #f1cf5b, #d4af37);
     }
 
     h2 {
-        font-family: 'Georgia', serif;
-        font-size: 2.2rem;
-        color: #ffcc00;
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.6);
+        font-family: 'Pirata One', serif;
+        font-size: 2.8rem;
+        color: $accent;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
         margin-bottom: 20px;
-        letter-spacing: 1px;
+        letter-spacing: 2px;
     }
     
     p {
+        font-family: 'Inter', sans-serif;
         font-size: 1.15rem;
-        color: #ffffff;
+        color: #e8e8e8;
         margin-bottom: 30px;
         max-width: 450px;
         margin-left: auto;
@@ -892,21 +1026,23 @@ $secondary: #4DD0E1; // Cyan
     flex-wrap: wrap;
 
     .choice-btn {
-        background: linear-gradient(to bottom, #455a64, #263238);
-        border: 2px solid #546e7a;
+        background: linear-gradient(to bottom, #2a1b0c, #1a1005);
+        border: 2px solid $secondary;
         color: #eceff1;
         padding: 12px 25px;
-        font-size: 1.1rem;
+        font-family: 'Pirata One', serif;
+        font-size: 1.5rem;
+        letter-spacing: 1px;
         border-radius: 8px;
-        font-weight: bold;
+        font-weight: normal;
         cursor: pointer;
         transition: all 0.2s ease-in-out;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 
         &:hover:not(:disabled) {
-            background: linear-gradient(to bottom, #546e7a, #37474f);
-            border-color: #ffcc00;
-            color: #ffcc00;
+            background: linear-gradient(to bottom, #4a3b2c, #2a1b0c);
+            border-color: $accent;
+            color: $accent;
             transform: translateY(-3px) scale(1.05);
             box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
         }
@@ -928,22 +1064,23 @@ $secondary: #4DD0E1; // Cyan
     margin: 0 auto;
 
     .btn-pick-player {
-        background: #1e2a30;
-        border: 2px solid #455a64;
+        background: linear-gradient(to bottom, #2a1b0c, #1a1005);
+        border: 2px solid $secondary;
         color: white;
         padding: 12px;
-        font-size: 1.1rem;
+        font-family: 'Pirata One', serif;
+        font-size: 1.5rem;
         border-radius: 8px;
         cursor: pointer;
         transition: all 0.2s;
         text-transform: uppercase;
-        letter-spacing: 1px;
-        font-weight: bold;
+        letter-spacing: 2px;
+        font-weight: normal;
 
         &:hover {
-            border-color: #ffcc00;
-            color: #ffcc00;
-            background: #26363c;
+            border-color: $accent;
+            color: $accent;
+            background: linear-gradient(to bottom, #4a3b2c, #2a1b0c);
             transform: scale(1.02);
             box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }

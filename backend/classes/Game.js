@@ -81,7 +81,7 @@ class Game {
             setTimeout(() => {
                 const bid = p.calculateBid(this.round);
                 this.handleBid(p.id, bid);
-            }, 1000 + Math.random() * 2000);
+            }, 500 + Math.random() * 1000);
         }
     });
 
@@ -147,7 +147,7 @@ class Game {
                    this.handlePlayCard(currentPlayer.id, cardToPlay.id, playedAs);
               }
 
-          }, 1500 + Math.random() * 1000); // Variable delay for realism
+          }, 500 + Math.random() * 500); // Faster variable delay for realism
       }
   }
 
@@ -320,13 +320,17 @@ class Game {
             winner.tricksWon++;
             this.io.in(this.id).emit('notification', `${winner.name} gewinnt den Stich!`);
 
-            // Apply Loot Bonus: +20 to Loot player and +20 to Trick Winner
+            // Apply Loot Bonus (Allianz)
+            // Die Allianz gilt zwischen dem Spieler der Loot gespielt hat und dem Stichgewinner.
+            // Die Punkte (jeweils 20) gibt es aber nur AM ENDE der Runde, wenn BEIDE ihr Gebot exakt erfüllen.
             this.currentTrick.forEach(t => {
                 if (t.card.type === 'loot') {
-                    const lootPlayer = this.players.find(p => p.id === t.playerId);
-                    // Initialisiere bonusPoints, falls nicht vorhanden
-                    if (lootPlayer) lootPlayer.bonusPoints = (lootPlayer.bonusPoints || 0) + 20;
-                    winner.bonusPoints = (winner.bonusPoints || 0) + 20;
+                    if (!this.lootAlliances) this.lootAlliances = [];
+                    // Speichere die Allianz für die Endabrechnung
+                    this.lootAlliances.push({
+                        player1Id: t.playerId,
+                        player2Id: winner.id
+                    });
                 }
             });
 
@@ -436,17 +440,23 @@ class Game {
       };
 
       if (pName === 'Tortuga Jack') {
-          // Reveal top 2 cards of the remaining deck to ALL players
-          // Since deal() uses splice(0, count), the top is at index 0
-          const topCards = this.deck.cards.slice(0, 2);
-          this.io.in(this.id).emit('pirate_action_jack', { deck: topCards });
-          // Pause slightly before continuing so players can look
-          setTimeout(() => {
-              this.finishTrickResolution();
-          }, 5000); // 5 seconds exactly
-          return;
+          // New ability: The winner can look at ALL remaining cards in the deck
+          const remainingCards = this.deck.cards;
+          
+          if (!winner.isBot) {
+              // Send all remaining cards to the winner
+                this.io.to(winner.id).emit('pirate_action_jack', { deck: remainingCards });
+                // Let EVERYONE know via toast
+                this.io.in(this.id).emit('toast', `${winner.name} durchsucht den restlichen Kartenstapel (Tortuga Jack).`);
+          } else {
+              // Bots don't need UI time, but we simulate thinking
+              this.io.in(this.id).emit('toast', `${winner.name} durchsucht den restlichen Kartenstapel (Tortuga Jack).`);
+              setTimeout(() => {
+                  this.handleBotPirateAction(winner, pName);
+              }, 2000);
+          }
       }
-      
+
       if (pName === 'Bahij the Bandit') {
            this.pirateActionData.drawnCards = this.deck.deal(2);
            winner.hand.push(...this.pirateActionData.drawnCards);
@@ -497,6 +507,9 @@ class Game {
           } else {
               actionData.bidChange = 0;
           }
+      } else if (pName === 'Tortuga Jack') {
+          // Bot just acknowledges the cards
+          actionData.done = true;
       }
 
       this.handlePirateAction(bot.id, actionData);
@@ -522,6 +535,8 @@ class Game {
           if (change === 1 || change === -1 || change === 0) {
               player.bid = Math.max(0, player.bid + change); // Cannot deal bid < 0
           }
+      } else if (pName === 'Tortuga Jack') {
+          // Just acknowledge
       }
 
       this.pirateActionData = null;
@@ -624,6 +639,26 @@ class Game {
   }
 
   calculateScores() {
+      // Evaluate Loot Alliances
+      if (this.lootAlliances) {
+          this.lootAlliances.forEach(alliance => {
+              const p1 = this.players.find(p => p.id === alliance.player1Id);
+              const p2 = this.players.find(p => p.id === alliance.player2Id);
+              if (p1 && p2) {
+                  const p1Exact = Math.abs(p1.tricksWon - p1.bid) === 0;
+                  const p2Exact = Math.abs(p2.tricksWon - p2.bid) === 0;
+                  if (p1Exact && p2Exact) {
+                      p1.bonusPoints = (p1.bonusPoints || 0) + 20;
+                      // Don't double-award if they are the same player (played Loot and won their own trick)
+                      if (p1.id !== p2.id) {
+                          p2.bonusPoints = (p2.bonusPoints || 0) + 20;
+                      }
+                  }
+              }
+          });
+      }
+      this.lootAlliances = []; // Reset for next round
+
       this.players.forEach(p => {
           let roundScore = 0;
           const diff = Math.abs(p.tricksWon - p.bid);

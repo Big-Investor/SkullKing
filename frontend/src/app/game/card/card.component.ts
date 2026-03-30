@@ -87,7 +87,7 @@ export class CardComponent {
       case 'mermaid': return '🧜‍♀️';
       case 'tigress': return '🐯';
       case 'kraken': return '🦑';
-      case 'white_whale': return '🐋';
+      case 'white_whale': return '🐳';
       case 'loot': return '💎';
       case 'escape': return '🏳️';
       default: return '';

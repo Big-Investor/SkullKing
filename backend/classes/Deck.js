@@ -19,8 +19,8 @@ class Deck {
 
     // Special cards
     for (let i = 0; i < 5; i++) this.cards.push(new Card('escape')); // 5 Flag Cards (Escapes)
-    for (let i = 0; i < 2; i++) this.cards.push(new Card('mermaid')); // 2 Mermaids
-    
+    this.cards.push(new Card('mermaid')); // 1 Mermaid (geändert von 2 auf 1)
+
     // 5 Pirates with extended abilities
     this.cards.push(new Card('pirate', null, null, 'Rosie D\'Laney'));
     this.cards.push(new Card('pirate', null, null, 'Bahij the Bandit'));

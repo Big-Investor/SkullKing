@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { SocketService } from '../services/socket.service';
@@ -41,6 +41,7 @@ export class GameComponent implements OnInit, OnDestroy {
   showRosieModal = false;
   showTortugaModal = false;
   tortugaDeck: Card[] = [];
+  tortugaTimeout: any;
 
   helpCards: { [key: string]: Card } = {
     skullking: { id: 'help-sk', type: 'skullking' },
@@ -60,7 +61,8 @@ export class GameComponent implements OnInit, OnDestroy {
   constructor(
     private route: ActivatedRoute,
     private socketService: SocketService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
@@ -91,12 +93,16 @@ export class GameComponent implements OnInit, OnDestroy {
 
     this.subs.add(
         this.socketService.onPirateActionJack().subscribe((data: { deck: Card[] }) => {
+            console.log('Received pirate_action_jack with deck:', data.deck);
             this.tortugaDeck = data.deck;
             this.showTortugaModal = true;
-            // Automatically hide after 5 seconds
-            setTimeout(() => {
-                this.showTortugaModal = false;
-            }, 5000);
+            this.cdr.detectChanges(); // Erzwinge UI-Update!
+            
+            // Automatically hide after 10 seconds and submit
+            if (this.tortugaTimeout) clearTimeout(this.tortugaTimeout);
+            this.tortugaTimeout = setTimeout(() => {
+                this.submitTortugaAction();
+            }, 10000);
         })
     );
 
@@ -268,6 +274,18 @@ export class GameComponent implements OnInit, OnDestroy {
       }
   }
 
+  submitTortugaAction() {
+      if (this.tortugaTimeout) {
+          clearTimeout(this.tortugaTimeout);
+          this.tortugaTimeout = null;
+      }
+      if (this.roomId) {
+          console.log('Submitting Tortuga Action DONE');
+          this.socketService.submitPirateAction(this.roomId, { done: true });
+          this.showTortugaModal = false;
+          this.cdr.detectChanges(); // UI sofort anpassen
+      }
+  }
   get opponents() {
       const state = this.gameState;
       if (!state) return [];

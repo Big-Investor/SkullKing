@@ -233,19 +233,6 @@
                     <app-card size="md"></app-card>
                 </div>
             </div>
-
-            <!-- Floating Revealed cards (Tortuga Jack) -->
-            <div *ngIf="showTortugaModal" class="tortuga-reveal">
-                <div class="reveal-header">
-                    <span class="icon">🏴‍☠️</span>
-                    <span class="text">Tortuga Jack sieht in die Zukunft</span>
-                </div>
-                <div class="cards">
-                    <div *ngFor="let card of tortugaDeck" class="peek-card">
-                        <app-card [card]="card" size="sm"></app-card>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <!-- Central Trick Area -->
@@ -418,5 +405,19 @@
         </div>
     </div>
 </div>
-
+<!-- Pirate Action: Tortuga Jack -->
+<div class="overlay" *ngIf="showTortugaModal">
+    <div class="modal pirate-modal tortuga-modal" style="max-width: 95vw; max-height: 95vh; display: flex; flex-direction: column;">
+        <h2>Tortuga Jack</h2>
+        <p>Das sind die restlichen Karten im Stapel, die in dieser Runde nicht ausgebeilt wurden.</p>
+        <div class="tortuga-card-grid">
+            <div *ngFor="let card of tortugaDeck" class="peek-card">
+                <app-card [card]="card" size="md"></app-card>
+            </div>
+        </div>
+        <button class="btn-confirm" style="align-self: center; margin-top: 20px;" (click)="submitTortugaAction()">
+            Ansehen beenden
+        </button>
+    </div>
+</div>
 <!-- Removing Tortuga Jack Modal (Now integrated into the table UI) -->
