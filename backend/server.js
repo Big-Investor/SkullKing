@@ -34,6 +34,15 @@ app.post('/api/rooms', (req, res) => {
   
   games.set(id, game);
   res.status(201).json({ roomId: id });
+
+  // Cleanup timeout in case no actual player joins
+  setTimeout(() => {
+    const existingGame = games.get(id);
+    if (existingGame && existingGame.players.filter(p => !p.isBot).length === 0) {
+      games.delete(id);
+      console.log(`[Game ${id}] deleted (timeout, no players connected)`);
+    }
+  }, 120000);
 });
 
 app.get('/api/rooms/:id', (req, res) => {
@@ -46,20 +55,26 @@ app.get('/api/rooms/:id', (req, res) => {
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 
 // ─── User API ─────────────────────────────────────────────────────────────────
-app.post('/api/register', (req, res) => {
+app.post('/api/register', async (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) return res.status(400).json({ error: 'Username und Passwort erforderlich' });
+    if (typeof username !== 'string' || typeof password !== 'string') return res.status(400).json({ error: 'Ungültiges Format' });
+    if (username.length > 30) return res.status(400).json({ error: 'Benutzername zu lang (max. 30 Zeichen)' });
+    if (password.length > 100) return res.status(400).json({ error: 'Passwort zu lang (max. 100 Zeichen)' });
     
-    const result = userManager.registerUser(username, password);
+    const result = await userManager.registerUser(username, password);
     if (!result.success) return res.status(400).json({ error: result.message });
     res.json({ success: true, username: result.username });
 });
 
-app.post('/api/login', (req, res) => {
+app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) return res.status(400).json({ error: 'Username und Passwort erforderlich' });
+    if (typeof username !== 'string' || typeof password !== 'string') return res.status(400).json({ error: 'Ungültiges Format' });
+    if (username.length > 30) return res.status(400).json({ error: 'Benutzername zu lang (max. 30 Zeichen)' });
+    if (password.length > 100) return res.status(400).json({ error: 'Passwort zu lang (max. 100 Zeichen)' });
     
-    const result = userManager.loginUser(username, password);
+    const result = await userManager.loginUser(username, password);
     if (!result.success) return res.status(401).json({ error: result.message });
     res.json({ success: true, username: result.username });
 });
@@ -92,6 +107,7 @@ io.on('connection', (socket) => {
     // Spieler hinzufügen
     if (game.addPlayer(socket.id, playerName)) {
         socket.join(roomId);
+        socket.roomId = roomId;
         console.log(`[Game ${roomId}] ${playerName} joined successfully`);
         
         // Allen den neuen Status senden
@@ -130,15 +146,14 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    // Einfache Logik: Spieler entfernen wenn disconnect
-    // In Produktion würde man Reconnect-Logik brauchen
-    for (const [id, game] of games.entries()) {
-        const p = game.players.find(p => p.id === socket.id);
-        if (p) {
+    // Einfache Logik: Spieler gezielt entfernen wenn disconnect
+    if (socket.roomId) {
+        const game = games.get(socket.roomId);
+        if (game) {
             game.removePlayer(socket.id);
             if (game.players.length === 0) {
-                games.delete(id);
-                console.log(`[Game ${id}] closed (empty)`);
+                games.delete(socket.roomId);
+                console.log(`[Game ${socket.roomId}] closed (empty)`);
             } else {
                 game.emitState();
             }
