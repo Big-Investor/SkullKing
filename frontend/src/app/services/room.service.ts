@@ -13,4 +13,16 @@ export class RoomService {
   checkRoom(id: string): Observable<{ exists: boolean }> {
     return this.http.get<{ exists: boolean }>(`/api/rooms/${id}`);
   }
+
+  register(username: string, password: string): Observable<any> {
+    return this.http.post('/api/register', { username, password });
+  }
+
+  login(username: string, password: string): Observable<any> {
+    return this.http.post('/api/login', { username, password });
+  }
+
+  getLeaderboard(): Observable<any[]> {
+    return this.http.get<any[]>('/api/leaderboard');
+  }
 }

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { SocketService } from '../services/socket.service';
@@ -26,13 +26,30 @@ export class GameComponent implements OnInit, OnDestroy {
   
   trickWinnerId: string | null = null;
   private lastRound = 0;
-  
+  isProcessingMove: boolean = false;
+
+  // Tigress
+  selectedTigress: Card | null = null;
+  showTigressModal = false;
+
+  // Pirate Actions
+  showBahijModal = false;
+  bahijDiscards: string[] = [];
+
+  showHarryModal = false;
+  showRascalModal = false;
+  showRosieModal = false;
+  showTortugaModal = false;
+  tortugaDeck: Card[] = [];
+  tortugaTimeout: any;
+
   helpCards: { [key: string]: Card } = {
     skullking: { id: 'help-sk', type: 'skullking' },
     pirate: { id: 'help-pi', type: 'pirate' },
     mermaid: { id: 'help-me', type: 'mermaid' },
     tigress: { id: 'help-ti', type: 'tigress' },
     kraken: { id: 'help-kr', type: 'kraken' },
+    white_whale: { id: 'help-ww', type: 'white_whale' },
     loot: { id: 'help-lo', type: 'loot' },
     escape: { id: 'help-esc', type: 'escape' },
     black: { id: 'help-bl', type: 'suit', color: 'black', value: 13 },
@@ -44,7 +61,8 @@ export class GameComponent implements OnInit, OnDestroy {
   constructor(
     private route: ActivatedRoute,
     private socketService: SocketService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
@@ -55,12 +73,14 @@ export class GameComponent implements OnInit, OnDestroy {
         return;
     }
 
-    this.roomId = this.route.snapshot.paramMap.get('id');
+    const rawId = this.route.snapshot.paramMap.get('id');
+    this.roomId = rawId ? rawId.toLowerCase() : null;
 
     // 2. Connect and Join
     this.socketService.connect();
     if (this.roomId) {
-        this.socketService.joinRoom(this.roomId, playerName);
+        const isGuest = sessionStorage.getItem('isGuest') === 'true';
+        this.socketService.joinRoom(this.roomId, playerName, isGuest);
     } 
 
     this.subs.add(
@@ -68,6 +88,21 @@ export class GameComponent implements OnInit, OnDestroy {
             this.trickWinnerId = data.winnerId;
             // Highlight is cleared when next trick starts or after delay
             setTimeout(() => this.trickWinnerId = null, 4000); 
+        })
+    );
+
+    this.subs.add(
+        this.socketService.onPirateActionJack().subscribe((data: { deck: Card[] }) => {
+            console.log('Received pirate_action_jack with deck:', data.deck);
+            this.tortugaDeck = data.deck;
+            this.showTortugaModal = true;
+            this.cdr.detectChanges(); // Erzwinge UI-Update!
+            
+            // Automatically hide after 10 seconds and submit
+            if (this.tortugaTimeout) clearTimeout(this.tortugaTimeout);
+            this.tortugaTimeout = setTimeout(() => {
+                this.submitTortugaAction();
+            }, 10000);
         })
     );
 
@@ -83,18 +118,52 @@ export class GameComponent implements OnInit, OnDestroy {
         }
 
         this.gameState = state;
+        this.isProcessingMove = false; // Reset processing flag on new state
+
+        // Check if pirate_action is required for me
+        if (state.phase === 'pirate_action' && state.pirateActionData?.playerId === state.me.id) {
+            const pName = state.pirateActionData.pirate;
+            if (pName === 'Rosie D\'Laney') this.showRosieModal = true;
+            if (pName === 'Bahij the Bandit') {
+                this.showBahijModal = true;
+                this.bahijDiscards = []; 
+            }
+            if (pName === 'Rascal of Roatan') this.showRascalModal = true;
+            if (pName === 'Harry the Giant') this.showHarryModal = true;
+        } else {
+            this.showRosieModal = false;
+            this.showBahijModal = false;
+            this.showRascalModal = false;
+            this.showHarryModal = false;
+        }
+
+        // Auto-Play Last Card if not round 1
+        if (this.gameState.round > 1 && 
+            this.gameState.phase === 'playing' && 
+            this.gameState.hand.length === 1 &&
+            this.gameState.players[this.gameState.turnIndex]?.id === this.gameState.me.id) {
+            
+            // Wait a short moment for better UX
+            setTimeout(() => {
+                if (this.gameState && this.gameState.hand.length === 1) {
+                    this.playCard(this.gameState.hand[0]);
+                }
+            }, 500);
+        }
       })
     );
 
     this.subs.add(
         this.socketService.onNotification().subscribe((msg: string) => {
             this.showNotification(msg);
+            this.isProcessingMove = false; // Reset on notification (e.g., error or success)
         })
     );
 
     this.subs.add(
         this.socketService.onErrorNotification().subscribe((msg: string) => {
             this.error = msg;
+            this.isProcessingMove = false; // Reset on error
             setTimeout(() => this.error = null, 3000);
         })
     );
@@ -124,6 +193,8 @@ export class GameComponent implements OnInit, OnDestroy {
   }
 
   playCard(card: Card) {
+    if (this.isProcessingMove) return;
+
     const state = this.gameState;
     // Basic validation
     if (!state?.me) return;
@@ -134,12 +205,87 @@ export class GameComponent implements OnInit, OnDestroy {
         this.showNotification("Du bist nicht am Zug!");
         return;
     }
+    
+    // Check for Tigress
+    if (card.type === 'tigress') {
+        this.selectedTigress = card;
+        this.showTigressModal = true;
+        return;
+    }
 
     if (this.roomId) {
+      this.isProcessingMove = true;
       this.socketService.playCard(this.roomId, card.id);
     }
   }
 
+  confirmTigressPlay(choice: 'pirate' | 'escape') {
+      if (this.roomId && this.selectedTigress) {
+          this.isProcessingMove = true;
+          this.socketService.playCard(this.roomId, this.selectedTigress.id, choice);
+          this.showTigressModal = false;
+          this.selectedTigress = null;
+      }
+  }
+
+  cancelTigressPlay() {
+      this.showTigressModal = false;
+      this.selectedTigress = null;
+  }
+
+  // --- Pirate Action Handlers ---
+
+  submitRosieAction(playerId: string) {
+      if (this.roomId) {
+          this.socketService.submitPirateAction(this.roomId, { nextPlayerId: playerId });
+          this.showRosieModal = false;
+      }
+  }
+
+  toggleBahijDiscard(cardId: string) {
+      const idx = this.bahijDiscards.indexOf(cardId);
+      if (idx > -1) {
+          this.bahijDiscards.splice(idx, 1);
+      } else {
+          if (this.bahijDiscards.length < 2) {
+              this.bahijDiscards.push(cardId);
+          }
+      }
+  }
+
+  submitBahijAction() {
+      if (this.roomId && this.bahijDiscards.length === 2) {
+          this.socketService.submitPirateAction(this.roomId, { discardIds: this.bahijDiscards });
+          this.showBahijModal = false;
+      }
+  }
+
+  submitRascalAction(wager: number) {
+      if (this.roomId) {
+          this.socketService.submitPirateAction(this.roomId, { wager });
+          this.showRascalModal = false;
+      }
+  }
+
+  submitHarryAction(change: number) {
+      if (this.roomId) {
+          this.socketService.submitPirateAction(this.roomId, { bidChange: change });
+          this.showHarryModal = false;
+      }
+  }
+
+  submitTortugaAction() {
+      if (this.tortugaTimeout) {
+          clearTimeout(this.tortugaTimeout);
+          this.tortugaTimeout = null;
+      }
+      if (this.roomId) {
+          console.log('Submitting Tortuga Action DONE');
+          this.socketService.submitPirateAction(this.roomId, { done: true });
+          this.showTortugaModal = false;
+          this.cdr.detectChanges(); // UI sofort anpassen
+      }
+  }
   get opponents() {
       const state = this.gameState;
       if (!state) return [];
@@ -154,6 +300,11 @@ export class GameComponent implements OnInit, OnDestroy {
 
   getRange(n: number): any[] {
     return Array(n).fill(0);
+  }
+
+  get sortedPlayers(): Player[] {
+      if (!this.gameState) return [];
+      return [...this.gameState.players].sort((a, b) => b.score - a.score);
   }
 
   showNotification(msg: string) {

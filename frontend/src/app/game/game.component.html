@@ -1,4 +1,9 @@
-<div class="game-container" *ngIf="gameState">
+<div class="game-container" *ngIf="gameState" [class.my-turn-active]="gameState.players[gameState.turnIndex] && gameState.players[gameState.turnIndex].id === gameState.me.id">
+
+    <!-- ADDED: My Turn Banner -->
+    <div class="my-turn-banner" *ngIf="gameState.phase === 'playing' && gameState.players[gameState.turnIndex] && gameState.players[gameState.turnIndex].id === gameState.me.id">
+        DU BIST DRAN!
+    </div>
 
     <!-- Notifications -->
     <div class="notifications">
@@ -30,16 +35,52 @@
                 </div>
                 <div class="desc">
                     <strong>Skull King</strong>
-                    <br>Schlägt alle Karten außer die Mermaid. Gibt 50 Pkt pro gefangenem Piraten.
+                    <br>Schlägt alle Karten außer die Mermaid. Gibt 30 Bonuspunkte pro gefangenem Piraten.
                 </div>
             </li>
             <li class="help-item">
                 <div class="help-card-preview">
-                     <app-card [card]="helpCards['pirate']" size="sm"></app-card>
+                     <app-card [card]="{type: 'pirate', value: 0, id: '900', pirateName: 'Rosie D\'Laney'}" size="sm"></app-card>
                 </div>
                 <div class="desc">
-                    <strong>Pirat</strong>
-                    <br>Schlägt alle Farben und Escapes. Wird nur vom Skull King oder Kraken geschlagen.
+                    <strong>Rosie D'Laney</strong>
+                    <br>Schlägt alle Farben und Flucht. Gewinnt sie den Stich, wählst du den Ausspieler für den nächsten Stich.
+                </div>
+            </li>
+            <li class="help-item">
+                <div class="help-card-preview">
+                     <app-card [card]="{type: 'pirate', value: 0, id: '901', pirateName: 'Bahij the Bandit'}" size="sm"></app-card>
+                </div>
+                <div class="desc">
+                    <strong>Bahij the Bandit</strong>
+                    <br>Schlägt alle Farben und Flucht. Gewinnt er, darfst du 2 Karten ziehen und danach 2 Karten aus der Hand abwerfen.
+                </div>
+            </li>
+            <li class="help-item">
+                <div class="help-card-preview">
+                     <app-card [card]="{type: 'pirate', value: 0, id: '902', pirateName: 'Rascal of Roatan'}" size="sm"></app-card>
+                </div>
+                <div class="desc">
+                    <strong>Rascal of Roatan</strong>
+                    <br>Schlägt alle Farben und Flucht. Gewinnt er, kannst du 10 oder 20 Punkte auf deinen exakten Stich wetten (Zusatzpunkte oder Abzug).
+                </div>
+            </li>
+            <li class="help-item">
+                <div class="help-card-preview">
+                     <app-card [card]="{type: 'pirate', value: 0, id: '903', pirateName: 'Harry the Giant'}" size="sm"></app-card>
+                </div>
+                <div class="desc">
+                    <strong>Harry the Giant</strong>
+                    <br>Schlägt alle Farben und Flucht. Gewinnt er, darfst du deine Stichansage genau um +1 oder -1 verändern.
+                </div>
+            </li>
+            <li class="help-item">
+                <div class="help-card-preview">
+                     <app-card [card]="{type: 'pirate', value: 0, id: '904', pirateName: 'Tortuga Jack'}" size="sm"></app-card>
+                </div>
+                <div class="desc">
+                    <strong>Tortuga Jack</strong>
+                    <br>Schlägt alle Farben und Flucht. Gewinnt er, deckt er 2 Karten vom Nachziehstapel für alle sichtbar auf.
                 </div>
             </li>
             <li class="help-item">
@@ -48,7 +89,7 @@
                 </div>
                 <div class="desc">
                     <strong>Mermaid</strong>
-                    <br>Schlägt alle Farben und Escapes. Wird von Piraten geschlagen. <strong>Schlägt den Skull King!</strong> (+50 Pkt für King)
+                    <br>Schlägt alle Farben und Flucht. Wird von Piraten geschlagen (Pirat bekommt +20 Pkt). <strong>Einzige Karte, die den Skull King schlägt!</strong> (+40 Bonuspunkte für König)
                 </div>
             </li>
              <li class="help-item">
@@ -66,7 +107,16 @@
                 </div>
                 <div class="desc">
                     <strong>Kraken</strong>
-                    <br>Zerstört den Stich! Niemand gewinnt. Der nächste Spieler beginnt (Ausnahme: letzte Runde).
+                    <br>Zerstört den Stich! Niemand gewinnt. Der Spieler, der den Stich gewonnen hätte (vor dem Kraken), beginnt den nächsten Stich.
+                </div>
+            </li>
+            <li class="help-item">
+                <div class="help-card-preview">
+                    <app-card [card]="helpCards['white_whale']" size="sm"></app-card>
+                </div>
+                <div class="desc">
+                    <strong>Weißer Wal</strong>
+                    <br>Alle Spezialkarten werden unwirksam (wie Escape). Alle Farben sind gleichwertig. Die höchste Zahl gewinnt den Stich. Wurden nur Sonderkarten gespielt, wird der Stich anschließend abgeworfen (wie beim Kraken) und die Person, die den Weißen Wal gespielt hat, spielt zum nächsten Stich an.
                 </div>
             </li>
             <li class="help-item">
@@ -84,7 +134,7 @@
                 </div>
                 <div class="desc">
                     <strong>Loot (Beute)</strong>
-                    <br>Du und der Stichgewinner erhalten jeweils 20 Bonuspunkte. Karte gilt als "Farblos" (wie Escape), man gewinnt damit nie.
+                    <br>Du und der Stichgewinner erhalten jeweils 20 Bonuspunkte. Karte gilt als Escape, man kann aber den Stich gewinnen, wenn als erstes gespielt und nur Flucht/Beute im Stich sind.
                 </div>
             </li>
             <li class="help-item">
@@ -102,15 +152,26 @@
                      <app-card [card]="helpCards['green']" size="sm" style="transform: scale(0.8);"></app-card>
                 </div>
                 <div class="desc">
-                    <strong>Farben (1-13)</strong>
-                    <br>Höhere Zahl gewinnt. Farbe muss bedient werden!
+                    <strong>Farben (1-14)</strong>
+                    <br>Höhere Zahl gewinnt. Farbe muss bedient werden! Die schwarzen/farbigen 14er geben +20/+10 Bonuspunkte für den Stichgewinner (müssen nur im Stich liegen).
                 </div>
             </li>
         </ul>
-        <h3>Punkte</h3>
+        <h3>Punkte & Boni</h3>
         <p>Stich angesagt & getroffen: 20 Pkt pro Stich.</p>
         <p>0 angesagt & getroffen: Runde * 10 Pkt.</p>
-        <p>Falsch angesagt: Differenz * -10 Pkt.</p>
+        <p>Falsch angesagt: (ang. - gew.) * -10 Pkt.</p>
+        <hr style="border-color: #666; margin: 5px 0;">
+        <p><strong>WICHTIG:</strong> Alle Bonuspunkte (gefangene Piraten, 14er etc.) und Wetten erhält man nur, wenn die Stichansage EXAKT getroffen wird!</p>
+        <ul style="padding-left: 20px; font-size: 14px;">
+            <li>Jeder mit dem Skull King gefangene Pirat: +30 Pkt</li>
+            <li>Skull King mit der Mermaid gefangen: +40 Pkt</li>
+            <li>Jede erbeutete Mermaid: +20 Pkt</li>
+            <li>Schwarzer 14er im gewonnenen Stich: +20 Pkt</li>
+            <li>Farbiger 14er im gewonnenen Stich: +10 Pkt</li>
+            <li>Loot (Beute): +20 Pkt für Spieler der Karte und Stichgewinner</li>
+            <li>Rascal of Roatan Wette: +10 oder +20 (bei Erfolg) / -10 oder -20 (bei Scheitern)</li>
+        </ul>
     </div>
 
     <!-- Opponents Area (Top) -->
@@ -135,7 +196,7 @@
         <div *ngIf="gameState.phase === 'lobby'" class="lobby-controls">
             <h1 class="room-code-display">Raum ID: <span>{{ roomId }}</span></h1>
             <p class="invite-hint">Teile diesen Code mit deinen Freunden!</p>
-            <h3>Warte auf Spieler... ({{ gameState.players.length }}/5)</h3>
+            <h3>Warte auf Spieler... ({{ gameState.players.length }}/8)</h3>
             
             <div class="bot-controls">
                 <button (click)="addBot('easy')" class="btn-bot">Einfacher Bot</button>
@@ -157,22 +218,37 @@
             <button (click)="submitBid()" class="btn-bid">Yo-Ho-Ho!</button>
         </div>
 
-         <!-- Waiting for others to bid -->
+        <!-- Waiting for others to bid -->
          <div *ngIf="gameState.phase === 'bidding' && gameState.me.bid !== null" class="waiting-msg">
             <p>Warte auf andere Gebote...</p>
         </div>
 
-        <!-- Trick Area -->
-        <div class="trick-area" *ngIf="gameState.phase === 'playing' || gameState.phase === 'finished'">
-            <div *ngFor="let play of gameState.currentTrick" class="played-card" [class.winning-card]="play.playerId === trickWinnerId">
-                 <div class="winner-label" *ngIf="play.playerId === trickWinnerId">Gewonnen!</div>
-                 <app-card [card]="play.card" size="md"></app-card>
-                 <span class="player-label">{{ (gameState.players | w_findPlayer:play.playerId)?.name }}</span>
+        <!-- Deck Visualization (Top Left Corner) -->
+        <div class="deck-area-corner" *ngIf="gameState.phase !== 'lobby'">
+            <div class="deck-stack">
+                <div class="deck-card card-3"></div>
+                <div class="deck-card card-2"></div>
+                <div class="deck-card card-1">
+                    <!-- Wenn [card] fehlt, zeigt app-card die Kartenrückseite an -->
+                    <app-card size="md"></app-card>
+                </div>
             </div>
-            
-            <div *ngIf="gameState.currentTrick.length === 0 && gameState.phase === 'playing'" class="empty-table-msg">
-                <p>Warte auf {{ (gameState.players | w_activePlayer)?.name }}...</p>
-                <p *ngIf="gameState.lastWinnerId">Letzter Stich: {{ (gameState.players | w_findPlayer:gameState.lastWinnerId)?.name }}</p>
+        </div>
+
+        <!-- Central Trick Area -->
+        <div class="table-center" *ngIf="gameState.phase !== 'lobby'">
+            <!-- Trick Area -->
+            <div class="trick-area">
+                <div *ngFor="let play of gameState.currentTrick" class="played-card" [class.winning-card]="play.playerId === trickWinnerId">
+                     <div class="winner-label" *ngIf="play.playerId === trickWinnerId">Gewonnen!</div>
+                       <app-card [card]="play.card" [playedAs]="play.playedAs" size="md"></app-card>
+                     <span class="player-label">{{ (gameState.players | w_findPlayer:play.playerId)?.name }}</span>
+                </div>
+                
+                <div *ngIf="gameState.currentTrick.length === 0 && gameState.phase === 'playing'" class="empty-table-msg">
+                    <p>Warte auf {{ (gameState.players | w_activePlayer)?.name }}...</p>
+                    <p *ngIf="gameState.lastWinnerId">Letzter Stich: {{ (gameState.players | w_findPlayer:gameState.lastWinnerId)?.name }}</p>
+                </div>
             </div>
         </div>
     </div>
@@ -195,7 +271,153 @@
 
 </div>
 
+<!-- SUMMARY OVERLAY ROUND -->
+<div class="summary-overlay" *ngIf="gameState && gameState.phase === 'roundSummary'">
+    <h2>Runden Ergebnis (Runde {{ gameState.round }})</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Spieler</th>
+                <th>Bid</th>
+                <th>Won</th>
+                <th>Round Score</th>
+                <th>Total Score</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr *ngFor="let p of sortedPlayers">
+                <td>{{ p.name }}</td>
+                <td>{{ p.bid }}</td>
+                <td>{{ p.tricksWon }}</td>
+                <td>{{ p.lastRoundScore ?? 0 }}</td> 
+                <td>{{ p.score }}</td>
+            </tr>
+        </tbody>
+    </table>
+    <div class="loading-bar">Nächste Runde startet gleich...</div>
+</div>
+
+<!-- GAME OVER SCREEN (Finished) -->
+<div class="summary-overlay finished" *ngIf="gameState && gameState.phase === 'finished'">
+    <div class="winner-display" *ngIf="sortedPlayers.length > 0">
+        🏆 {{ sortedPlayers[0].name }} gewinnt! 🏆
+    </div>
+    <h2>SPIELENDE!</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Rang</th>
+                <th>Spieler</th>
+                <th>Total Score</th>
+            </tr>
+        </thead>
+        <tbody>
+             <tr *ngFor="let p of sortedPlayers; let i = index">
+                <td>#{{ i + 1 }}</td>
+                <td>{{ p.name }}</td>
+                <td>{{ p.score }}</td>
+            </tr>
+        </tbody>
+    </table>
+    <button onclick="window.location.href='/'" class="btn-start" style="margin-top: 40px;">Zurück zur Lobby</button>
+</div>
+
 <!-- Loading / Error -->
 <div *ngIf="!gameState" class="loading">
     <p>Verbinde mir Raum...</p>
 </div>
+
+<!-- Tigress Modal -->
+<div class="overlay" *ngIf="showTigressModal">
+    <div class="modal pirate-modal">
+        <h2>Tigress gespielt!</h2>
+        <p>Als was möchtest du die Tigress spielen?</p>
+        <div class="tigress-options">
+            <button class="choice-btn pirate" (click)="confirmTigressPlay('pirate')">
+                PIRAT
+            </button>
+            <button class="choice-btn escape" (click)="confirmTigressPlay('escape')">
+                FLUCHT (Weiß)
+            </button>
+        </div>
+        <button class="cancel-btn" (click)="cancelTigressPlay()">Abbrechen</button>
+    </div>
+</div>
+
+<!-- Pirate Action: Rosie D'Laney -->
+<div class="overlay" *ngIf="showRosieModal">
+    <div class="modal pirate-modal">
+        <h2>Rosie D'Laney</h2>
+        <p>Bestimme, welcher Spieler den nächsten Stich anspielt:</p>
+        <div class="player-list">
+            <button *ngFor="let p of gameState?.players" 
+                    class="btn-pick-player"
+                    (click)="submitRosieAction(p.id)">
+                {{ p.name }} {{ p.id === gameState?.me?.id ? '(Du)' : '' }}
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Pirate Action: Bahij the Bandit -->
+<div class="overlay" *ngIf="showBahijModal">
+    <div class="modal pirate-modal bahij-modal">
+        <h2>Bahij the Bandit</h2>
+        <p>Wähle 2 Karten aus deiner restlichen Hand, die du abwerfen möchtest:</p>
+        <div class="bahij-hand">
+             <div *ngFor="let card of gameState?.hand; let i = index" 
+                  class="hand-card-container bahij-card"
+                  [class.selected]="bahijDiscards.includes(card.id)"
+                  (click)="toggleBahijDiscard(card.id)">
+                  
+                 <app-card [card]="card" [selectable]="true" size="sm"></app-card>
+             </div>
+        </div>
+        <button class="btn-confirm" [disabled]="bahijDiscards.length !== 2" (click)="submitBahijAction()">
+            Bestätigen ({{bahijDiscards.length}}/2)
+        </button>
+    </div>
+</div>
+
+<!-- Pirate Action: Rascal of Roatan -->
+<div class="overlay" *ngIf="showRascalModal">
+    <div class="modal pirate-modal">
+        <h2>Rascal of Roatan</h2>
+        <p>Du kannst 0, 10 oder 20 Punkte wetten. Erreichst du deine Ansage exakt, gewinnst du diese Punkte zusätzlich. Verfehlst du sie, werden sie dir abgezogen!</p>
+        <div class="wager-options">
+            <button class="choice-btn" (click)="submitRascalAction(0)">0 Wetten</button>
+            <button class="choice-btn bet-1" (click)="submitRascalAction(10)">10 Wetten</button>
+            <button class="choice-btn bet-2" (click)="submitRascalAction(20)">20 Wetten</button>
+        </div>
+    </div>
+</div>
+
+<!-- Pirate Action: Harry the Giant -->
+<div class="overlay" *ngIf="showHarryModal">
+    <div class="modal pirate-modal">
+        <h2>Harry the Giant</h2>
+        <p>Möchtest du deine Stichansage anpassen?</p>
+        <p>Dein aktuelles Gebot: <strong>{{ gameState?.me?.bid }}</strong></p>
+        <div class="wager-options">
+            <button class="choice-btn" (click)="submitHarryAction(-1)" [disabled]="gameState?.me?.bid === 0">-1 Stich</button>
+            <button class="choice-btn" (click)="submitHarryAction(0)">Behalten</button>
+            <button class="choice-btn" (click)="submitHarryAction(1)">+1 Stich</button>
+        </div>
+    </div>
+</div>
+<!-- Pirate Action: Tortuga Jack -->
+<div class="overlay" *ngIf="showTortugaModal">
+    <div class="modal pirate-modal tortuga-modal" style="max-width: 95vw; max-height: 95vh; display: flex; flex-direction: column;">
+        <h2>Tortuga Jack</h2>
+        <p>Das sind die restlichen Karten im Stapel, die in dieser Runde nicht ausgebeilt wurden.</p>
+        <div class="tortuga-card-grid">
+            <div *ngFor="let card of tortugaDeck" class="peek-card">
+                <app-card [card]="card" size="md"></app-card>
+            </div>
+        </div>
+        <button class="btn-confirm" style="align-self: center; margin-top: 20px;" (click)="submitTortugaAction()">
+            Ansehen beenden
+        </button>
+    </div>
+</div>
+<!-- Removing Tortuga Jack Modal (Now integrated into the table UI) -->

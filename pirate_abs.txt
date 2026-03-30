@@ -1,0 +1,480 @@
+
+> <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<!--[if IE 6]><html class="ie6" 
+xmlns="http://www.w3.org/1999/xhtml"><![endif]-->
+<!--[if IE 7]><html class="lt-ie8 lt-ie9" 
+xmlns="http://www.w3.org/1999/xhtml"><![endif]-->
+<!--[if IE 8]><html class="lt-ie9" 
+xmlns="http://www.w3.org/1999/xhtml"><![endif]-->
+<!--[if gt IE 8]><!--><html 
+xmlns="http://www.w3.org/1999/xhtml"><!--<![endif]-->
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, 
+maximum-scale=3.0, user-scalable=1" />
+  <meta name="referrer" content="origin" />
+  <meta name="HandheldFriendly" content="true" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>&quot;rascal of roatan&quot; ability skull king at DuckDuckGo</title>
+  <link title="DuckDuckGo (HTML)" type="application/opensearchdescription+xml" 
+rel="search" href="//duckduckgo.com/opensearch_html_v2.xml" />
+  <link href="//duckduckgo.com/favicon.ico" rel="shortcut icon" />
+  <link rel="icon" href="//duckduckgo.com/favicon.ico" type="image/x-icon" />
+  <link id="icon60" rel="apple-touch-icon" 
+href="//duckduckgo.com/assets/icons/meta/DDG-iOS-icon_60x60.png?v=2"/>
+  <link id="icon76" rel="apple-touch-icon" sizes="76x76" 
+href="//duckduckgo.com/assets/icons/meta/DDG-iOS-icon_76x76.png?v=2"/>
+  <link id="icon120" rel="apple-touch-icon" sizes="120x120" 
+href="//duckduckgo.com/assets/icons/meta/DDG-iOS-icon_120x120.png?v=2"/>
+  <link id="icon152" rel="apple-touch-icon" sizes="152x152" 
+href="//duckduckgo.com/assets/icons/meta/DDG-iOS-icon_152x152.png?v=2"/>
+  <link rel="image_src" 
+href="//duckduckgo.com/assets/icons/meta/DDG-icon_256x256.png">
+  <link rel="stylesheet" media="handheld, all" 
+href="//duckduckgo.com/dist/h.276ddc0c15a4252ea5a2.css" type="text/css"/>
+</head>
+
+<body class="body--html">
+  <a name="top" id="top"></a>
+
+  <form action="/html/" method="post">
+    <input type="text" name="state_hidden" id="state_hidden" />
+  </form>
+
+  <div>
+    <div class="site-wrapper-border"></div>
+
+    <div id="header" class="header cw header--html">
+      <a title="DuckDuckGo" href="/html/" class="header__logo-wrap"></a>
+
+      <form name="x" class="header__form" action="/html/" method="post">
+        <div class="search search--header">
+          <input name="q" autocomplete="off" class="search__input" 
+id="search_form_input_homepage" type="text" value="&quot;rascal of 
+roatan&quot; ability skull king" />
+          <input name="b" id="search_button_homepage" class="search__button 
+search__button--html" value="" title="Search" alt="Search" type="submit" />
+        </div>
+
+        
+        
+        
+        
+
+        <div class="frm__select">
+          <select name="kl">
+            
+              <option value="" >All Regions</option>
+            
+              <option value="ar-es" >Argentina</option>
+            
+              <option value="au-en" >Australia</option>
+            
+              <option value="at-de" >Austria</option>
+            
+              <option value="be-fr" >Belgium (fr)</option>
+            
+              <option value="be-nl" >Belgium (nl)</option>
+            
+              <option value="br-pt" >Brazil</option>
+            
+              <option value="bg-bg" >Bulgaria</option>
+            
+              <option value="ca-en" >Canada (en)</option>
+            
+              <option value="ca-fr" >Canada (fr)</option>
+            
+              <option value="ct-ca" >Catalonia</option>
+            
+              <option value="cl-es" >Chile</option>
+            
+              <option value="cn-zh" >China</option>
+            
+              <option value="co-es" >Colombia</option>
+            
+              <option value="hr-hr" >Croatia</option>
+            
+              <option value="cz-cs" >Czech Republic</option>
+            
+              <option value="dk-da" >Denmark</option>
+            
+              <option value="ee-et" >Estonia</option>
+            
+              <option value="fi-fi" >Finland</option>
+            
+              <option value="fr-fr" >France</option>
+            
+              <option value="de-de" >Germany</option>
+            
+              <option value="gr-el" >Greece</option>
+            
+              <option value="hk-tzh" >Hong Kong</option>
+            
+              <option value="hu-hu" >Hungary</option>
+            
+              <option value="is-is" >Iceland</option>
+            
+              <option value="in-en" >India (en)</option>
+            
+              <option value="id-en" >Indonesia (en)</option>
+            
+              <option value="ie-en" >Ireland</option>
+            
+              <option value="il-en" >Israel (en)</option>
+            
+              <option value="it-it" >Italy</option>
+            
+              <option value="jp-jp" >Japan</option>
+            
+              <option value="kr-kr" >Korea</option>
+            
+              <option value="lv-lv" >Latvia</option>
+            
+              <option value="lt-lt" >Lithuania</option>
+            
+              <option value="my-en" >Malaysia (en)</option>
+            
+              <option value="mx-es" >Mexico</option>
+            
+              <option value="nl-nl" >Netherlands</option>
+            
+              <option value="nz-en" >New Zealand</option>
+            
+              <option value="no-no" >Norway</option>
+            
+              <option value="pk-en" >Pakistan (en)</option>
+            
+              <option value="pe-es" >Peru</option>
+            
+              <option value="ph-en" >Philippines (en)</option>
+            
+              <option value="pl-pl" >Poland</option>
+            
+              <option value="pt-pt" >Portugal</option>
+            
+              <option value="ro-ro" >Romania</option>
+            
+              <option value="ru-ru" >Russia</option>
+            
+              <option value="xa-ar" >Saudi Arabia</option>
+            
+              <option value="sg-en" >Singapore</option>
+            
+              <option value="sk-sk" >Slovakia</option>
+            
+              <option value="sl-sl" >Slovenia</option>
+            
+              <option value="za-en" >South Africa</option>
+            
+              <option value="es-ca" >Spain (ca)</option>
+            
+              <option value="es-es" >Spain (es)</option>
+            
+              <option value="se-sv" >Sweden</option>
+            
+              <option value="ch-de" >Switzerland (de)</option>
+            
+              <option value="ch-fr" >Switzerland (fr)</option>
+            
+              <option value="tw-tzh" >Taiwan</option>
+            
+              <option value="th-en" >Thailand (en)</option>
+            
+              <option value="tr-tr" >Turkey</option>
+            
+              <option value="us-en" >US (English)</option>
+            
+              <option value="us-es" >US (Spanish)</option>
+            
+              <option value="ua-uk" >Ukraine</option>
+            
+              <option value="uk-en" >United Kingdom</option>
+            
+              <option value="vn-en" >Vietnam (en)</option>
+            
+          </select>
+        </div>
+
+        <div class="frm__select frm__select--last">
+          <select class="" name="df">
+            
+              <option value="" selected>Any Time</option>
+            
+              <option value="d" >Past Day</option>
+            
+              <option value="w" >Past Week</option>
+            
+              <option value="m" >Past Month</option>
+            
+              <option value="y" >Past Year</option>
+            
+          </select>
+        </div>
+      </form>
+    </div>
+
+    
+
+    
+      <!-- Web results are present -->
+      <div>
+        <div class="serp__results">
+          <div id="links" class="results">
+            
+
+            
+              
+                <div class="result results_links results_links_deep web-result 
+">
+                  <div class="links_main links_deep result__body"> <!-- This 
+is the visible part -->
+                    
+                      <h2 class="result__title">
+                        <a rel="nofollow" class="result__a" href="//duckduckgo.
+com/l/?uddg=https%3A%2F%2Fboardgamegeek.com%2Fthread%2F2492656%2Frascal%2Dof%2D
+roatan%2Dplayed%2Dlast&amp;rut=243caf936a9153863eeb82685e947c530730165c3d345646
+78f8a397d841fda3">Rascal of Roatan …played last? | Skull King - 
+BoardGameGeek</a>
+                      </h2>
+
+                    
+
+                    
+                      <div class="result__extras">
+                        <div class="result__extras__url">
+                          <span class="result__icon">
+                            <a rel="nofollow" href="//duckduckgo.com/l/?uddg=ht
+tps%3A%2F%2Fboardgamegeek.com%2Fthread%2F2492656%2Frascal%2Dof%2Droatan%2Dplaye
+d%2Dlast&amp;rut=243caf936a9153863eeb82685e947c530730165c3d34564678f8a397d841fd
+a3">
+                              <img class="result__icon__img" width="16" 
+height="16" alt="" 
+src="//external-content.duckduckgo.com/ip3/boardgamegeek.com.ico" name="i15" />
+                            </a>
+                          </span>
+                          <a class="result__url" href="//duckduckgo.com/l/?uddg
+=https%3A%2F%2Fboardgamegeek.com%2Fthread%2F2492656%2Frascal%2Dof%2Droatan%2Dpl
+ayed%2Dlast&amp;rut=243caf936a9153863eeb82685e947c530730165c3d34564678f8a397d84
+1fda3">
+                            
+boardgamegeek.com/thread/2492656/rascal-of-roatan-played-last
+                          </a>
+                          
+                        </div>
+                      </div>
+                    
+
+                    
+                      
+                        <a class="result__snippet" href="//duckduckgo.com/l/?ud
+dg=https%3A%2F%2Fboardgamegeek.com%2Fthread%2F2492656%2Frascal%2Dof%2Droatan%2D
+played%2Dlast&amp;rut=243caf936a9153863eeb82685e947c530730165c3d34564678f8a397d
+841fda3">When you win the last trick with him, and he&#x27;s the last card, 
+and you are about to get your bid correct, do you then get 20 points? 
+It&#x27;s not really a wager, eh?</a>
+                      
+                    
+
+                    <div class="clear"></div>
+                  </div>
+                </div>
+              
+            
+              
+                <div class="result results_links results_links_deep web-result 
+">
+                  <div class="links_main links_deep result__body"> <!-- This 
+is the visible part -->
+                    
+                      <h2 class="result__title">
+                        <a rel="nofollow" class="result__a" href="//duckduckgo.
+com/l/?uddg=https%3A%2F%2Fvongrey.net%2F&amp;rut=f72d924fde9663a2394d32e1e8a595
+e0074a98005ce53b1eb500f1771cff2b20">Skull King Scorer</a>
+                      </h2>
+
+                    
+
+                    
+                      <div class="result__extras">
+                        <div class="result__extras__url">
+                          <span class="result__icon">
+                            <a rel="nofollow" href="//duckduckgo.com/l/?uddg=ht
+tps%3A%2F%2Fvongrey.net%2F&amp;rut=f72d924fde9663a2394d32e1e8a595e0074a98005ce5
+3b1eb500f1771cff2b20">
+                              <img class="result__icon__img" width="16" 
+height="16" alt="" src="//external-content.duckduckgo.com/ip3/vongrey.net.ico" 
+name="i15" />
+                            </a>
+                          </span>
+                          <a class="result__url" href="//duckduckgo.com/l/?uddg
+=https%3A%2F%2Fvongrey.net%2F&amp;rut=f72d924fde9663a2394d32e1e8a595e0074a98005
+ce53b1eb500f1771cff2b20">
+                            vongrey.net
+                          </a>
+                          
+                        </div>
+                      </div>
+                    
+
+                    
+                      
+                        <a class="result__snippet" href="//duckduckgo.com/l/?ud
+dg=https%3A%2F%2Fvongrey.net%2F&amp;rut=f72d924fde9663a2394d32e1e8a595e0074a980
+05ce53b1eb500f1771cff2b20"><b>Skull</b> <b>King</b> captured by Mermaid+40 
+Loot card (both players meet bid)+20 each Pirate Abilities <b>Rascal of 
+Roatan</b> — wager wins+10 or +20 <b>Rascal of Roatan</b> — wager loses-10 or 
+-20 Harry the GiantBid ±1 Confirm Scores ?</a>
+                      
+                    
+
+                    <div class="clear"></div>
+                  </div>
+                </div>
+              
+            
+              
+                <div class="result results_links results_links_deep web-result 
+">
+                  <div class="links_main links_deep result__body"> <!-- This 
+is the visible part -->
+                    
+                      <h2 class="result__title">
+                        <a rel="nofollow" class="result__a" href="//duckduckgo.
+com/l/?uddg=https%3A%2F%2Fwww.theboardgamefamily.com%2F2019%2F01%2Fskull%2Dking
+%2Dcard%2Dgame%2Dreview%2F&amp;rut=20266cb30cc51aa43776d4a22c5acc40a1d7a85cfcde
+db806b0fb948ac1b88fb">Skull King is totally King in our family - The Board 
+Game Family</a>
+                      </h2>
+
+                    
+
+                    
+                      <div class="result__extras">
+                        <div class="result__extras__url">
+                          <span class="result__icon">
+                            <a rel="nofollow" href="//duckduckgo.com/l/?uddg=ht
+tps%3A%2F%2Fwww.theboardgamefamily.com%2F2019%2F01%2Fskull%2Dking%2Dcard%2Dgame
+%2Dreview%2F&amp;rut=20266cb30cc51aa43776d4a22c5acc40a1d7a85cfcdedb806b0fb948ac
+1b88fb">
+                              <img class="result__icon__img" width="16" 
+height="16" alt="" 
+src="//external-content.duckduckgo.com/ip3/www.theboardgamefamily.com.ico" 
+name="i15" />
+                            </a>
+                          </span>
+                          <a class="result__url" href="//duckduckgo.com/l/?uddg
+=https%3A%2F%2Fwww.theboardgamefamily.com%2F2019%2F01%2Fskull%2Dking%2Dcard%2Dg
+ame%2Dreview%2F&amp;rut=20266cb30cc51aa43776d4a22c5acc40a1d7a85cfcdedb806b0fb94
+8ac1b88fb">
+                            
+www.theboardgamefamily.com/2019/01/skull-king-card-game-review/
+                          </a>
+                          
+                        </div>
+                      </div>
+                    
+
+                    
+                      
+                        <a class="result__snippet" href="//duckduckgo.com/l/?ud
+dg=https%3A%2F%2Fwww.theboardgamefamily.com%2F2019%2F01%2Fskull%2Dking%2Dcard%2
+Dgame%2Dreview%2F&amp;rut=20266cb30cc51aa43776d4a22c5acc40a1d7a85cfcdedb806b0fb
+948ac1b88fb">Our one and only visit to Roatan and our first play of 
+<b>Skull</b> <b>King</b>, with the <b>Rascal of Roatan</b>, just happened to 
+be on the very same day! What are the chances of that happening? We got caught 
+up in the fun of the game and played it a ton of times over the following days 
+on the cruise. We even played it in the hotel room after the cruise.</a>
+                      
+                    
+
+                    <div class="clear"></div>
+                  </div>
+                </div>
+              
+            
+              
+                <div class="result results_links results_links_deep web-result 
+">
+                  <div class="links_main links_deep result__body"> <!-- This 
+is the visible part -->
+                    
+                      <h2 class="result__title">
+                        <a rel="nofollow" class="result__a" href="//duckduckgo.
+com/l/?uddg=https%3A%2F%2Fjudge.me%2Freviews%2Fstores%2Fwww.boardgamebliss.com%
+2Fproducts%2Fskull%2Dking%2Dblack%2Dbox%2Dgrandpa%2Dbecks%2Dgames%2Dedition%2Dn
+ew%2Dedition&amp;rut=dfb180e90c52bdbcfa5ed35580af58bb7af7016586291bc65d5284080a
+95c7a4">Skull King (New Edition) (sku: Tentacles GBP3056) - judge.me</a>
+                      </h2>
+
+                    
+
+                    
+                      <div class="result__extras">
+                        <div class="result__extras__url">
+                          <span class="result__icon">
+                            <a rel="nofollow" href="//duckduckgo.com/l/?uddg=ht
+tps%3A%2F%2Fjudge.me%2Freviews%2Fstores%2Fwww.boardgamebliss.com%2Fproducts%2Fs
+kull%2Dking%2Dblack%2Dbox%2Dgrandpa%2Dbecks%2Dgames%2Dedition%2Dnew%2Dedition&a
+mp;rut=dfb180e90c52bdbcfa5ed35580af58bb7af7016586291bc65d5284080a95c7a4">
+                              <img class="result__icon__img" width="16" 
+height="16" alt="" src="//external-content.duckduckgo.com/ip3/judge.me.ico" 
+name="i15" />
+                            </a>
+                          </span>
+                          <a class="result__url" href="//duckduckgo.com/l/?uddg
+=https%3A%2F%2Fjudge.me%2Freviews%2Fstores%2Fwww.boardgamebliss.com%2Fproducts%
+2Fskull%2Dking%2Dblack%2Dbox%2Dgrandpa%2Dbecks%2Dgames%2Dedition%2Dnew%2Deditio
+n&amp;rut=dfb180e90c52bdbcfa5ed35580af58bb7af7016586291bc65d5284080a95c7a4">
+                            judge.me/reviews/stores/www.boardgamebliss.com/prod
+ucts/skull-king-black-box-grandpa-becks-games-edition-new-edition
+                          </a>
+                          
+                        </div>
+                      </div>
+                    
+
+                    
+                      
+                        <a class="result__snippet" href="//duckduckgo.com/l/?ud
+dg=https%3A%2F%2Fjudge.me%2Freviews%2Fstores%2Fwww.boardgamebliss.com%2Fproduct
+s%2Fskull%2Dking%2Dblack%2Dbox%2Dgrandpa%2Dbecks%2Dgames%2Dedition%2Dnew%2Dedit
+ion&amp;rut=dfb180e90c52bdbcfa5ed35580af58bb7af7016586291bc65d5284080a95c7a4">E
+ach Pirate&#x27;s special <b>ability</b> is unlocked by winning a trick in 
+which it is played and must be used immediately thereafter.Rosie D&#x27;Laney: 
+Choose any player to lead out the next trick, including yourself.Bahij the 
+Bandit: Draw 2 cards, then discard any 2 cards.<b>Rascal of Roatan</b>: You 
+may choose to wager 10 or 20 points.</a>
+                      
+                    
+
+                    <div class="clear"></div>
+                  </div>
+                </div>
+              
+            
+
+            
+
+            <div class="feedback-btn">
+              <a rel="nofollow" href="//duckduckgo.com/feedback.html" 
+target="_new">Feedback</a>
+            </div>
+            <div class="clear"></div>
+          </div>
+        </div>
+      </div> <!-- links wrapper //-->
+    
+  </div>
+
+  <div id="bottom_spacing2"></div>
+
+  
+    <img src="//duckduckgo.com/t/sl_h"/>
+  
+</body>
+</html>
+
+
+

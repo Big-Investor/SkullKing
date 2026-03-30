@@ -8,8 +8,8 @@
     overflow: hidden;
     backface-visibility: hidden;
     border: 1px solid rgba(0,0,0,0.2);
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    font-weight: bold;
+    font-family: 'Pirata One', serif;
+    font-weight: normal;
 
     .card-image-bg {
         position: absolute;
@@ -23,48 +23,104 @@
         border-radius: 10px; 
     }
 
+    .played-as-badge {
+        position: absolute;
+        bottom: 8px;
+        left: 50%;
+        width: 85%;
+        text-align: center;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.85);
+        color: #fff;
+        padding: 4px 2px;
+        border-radius: 8px;
+        font-size: 0.65rem;
+        font-weight: bold;
+        z-index: 10;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.5);
+        border: 1px solid #f1c40f;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        
+        &.is-pirate {
+            background: rgba(139, 0, 0, 0.95);
+            border-color: #ff5252;
+            color: #fff;
+        }
+        &.is-escape {
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            border-color: #bdbdbd;
+        }
+    }
+
     .card-inner {
         position: relative;
         width: 100%;
         height: 100%;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        padding: 8px;
         box-sizing: border-box;
         z-index: 2; // Above pattern
     }
 
     // Corner Information
     .top-left, .bottom-right {
+        position: absolute;
         display: flex;
         flex-direction: column;
         align-items: center;
-        line-height: 1;
+        line-height: 0.9;
+    }
+
+    .top-left {
+        top: 8px;
+        left: 8px;
     }
 
     .bottom-right {
+        bottom: 8px;
+        right: 8px;
         transform: rotate(180deg);
     }
 
-    .value { font-size: 1.2em; display: block; }
-    .icon { font-size: 1em; display: block; margin-top: 2px; }
+    .value { font-size: 1.6em; display: block; letter-spacing: 1px; }
+    .icon { font-size: 1.2em; display: block; margin-top: 2px; filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.3)); }
 
     .center-content {
         position: absolute;
         top: 50%; left: 50%;
         transform: translate(-50%, -50%);
         text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
         
         .big-icon {
             display: block;
-            filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.3));
+            filter: drop-shadow(2px 2px 5px rgba(0,0,0,0.4));
+            line-height: 1;
         }
         .big-value {
             display: block;
-            font-size: 2em;
-            margin-top: -10px;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            font-size: 3em;
+            line-height: 1;
+            margin-top: 5px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        .pirate-name {
+            display: block;
+            margin-top: 4px;
+            font-size: 0.8em;
+            line-height: 1.1;
+            font-weight: normal;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.4);
+            color: #fff;
+            padding: 2px 4px;
+            border-radius: 4px;
+            max-width: 90%;
+            word-wrap: break-word;
         }
     }
 
@@ -72,7 +128,8 @@
     &.card-sm {
         width: 60px; height: 90px; font-size: 10px;
         .big-icon { font-size: 24px; }
-        .card-inner { padding: 4px; }
+        .top-left { top: 4px; left: 4px; }
+        .bottom-right { bottom: 4px; right: 4px; }
     }
 
     &.card-md {
@@ -166,6 +223,48 @@
         );
          .big-icon { filter: drop-shadow(3px 3px 0px rgba(0,0,0,0.8)); }
     }
+    
+    // Individually Named Pirates
+    &.pirate-rosie {
+        @include special-card-style(
+            radial-gradient(circle, #D81B60 0%, #880E4F 80%, #311B92 100%),
+            #C2185B,
+            #F8BBD0,
+            rgba(233, 30, 99, 0.4)
+        );
+    }
+    &.pirate-bahij {
+        @include special-card-style(
+            radial-gradient(circle, #F57F17 0%, #E65100 80%, #3E2723 100%),
+            #FF6F00,
+            #FFF9C4,
+            rgba(255, 152, 0, 0.4)
+        );
+    }
+    &.pirate-rascal {
+        @include special-card-style(
+            radial-gradient(circle, #43A047 0%, #1B5E20 80%, #000000 100%),
+            #2E7D32,
+            #C8E6C9,
+            rgba(76, 175, 80, 0.4)
+        );
+    }
+    &.pirate-harry {
+        @include special-card-style(
+            radial-gradient(circle, #5D4037 0%, #3E2723 80%, #212121 100%),
+            #4E342E,
+            #D7CCC8,
+            rgba(121, 85, 72, 0.4)
+        );
+    }
+    &.pirate-tortuga {
+        @include special-card-style(
+            radial-gradient(circle, #1976D2 0%, #0D47A1 80%, #000000 100%),
+            #1565C0,
+            #BBDEFB,
+            rgba(33, 150, 243, 0.4)
+        );
+    }
 
     &.mermaid { 
         @include special-card-style(
@@ -196,6 +295,24 @@
             #FFF3E0,
             rgba(255, 87, 34, 0.4)
         );
+
+        &.as-pirate {
+            @include special-card-style(
+                radial-gradient(circle, #8D6E63 0%, #3E2723 80%, #150805 100%),
+                #8c422c,
+                #FFCCBC,
+                null 
+           );
+            .big-icon { filter: drop-shadow(3px 3px 0px rgba(0,0,0,0.8)); }
+        }
+
+        &.as-escape {
+            background: #FAFAFA;
+            color: #9E9E9E; 
+            border: 4px dashed #BDBDBD; 
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+            .center-content .big-icon { opacity: 0.5; }
+        }
     }
 
     &.kraken { 
@@ -207,7 +324,17 @@
         );
     }
 
-    &.loot { 
+    &.white_whale { 
+        @include special-card-style(
+           radial-gradient(circle at 50% 40%, #546E7A 0%, #263238 50%, #102027 100%),
+           #CFD8DC,
+           #ECEFF1,
+           rgba(176, 190, 197, 0.4) 
+        );
+        .big-icon { filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8)); }
+    }
+
+    &.loot {  
          @include special-card-style(
             radial-gradient(ellipse at center, #FFF9C4, #FBC02D),
             #F9A825,

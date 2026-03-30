@@ -1,72 +1,146 @@
 <div class="home">
-  <div class="card">
+  <div class="card main-card">
     <div class="logo">
-      <span class="skull">☠</span>
+      <span class="skull">☠️</span>
       <h1>Skull King</h1>
-    </div>
-    <p class="subtitle">Erstelle einen neuen Raum oder tritt einem bestehenden bei.</p>
-
-    <div class="input-group">
-      <input 
-        type="text" 
-        placeholder="Dein Piratenname" 
-        [(ngModel)]="username" 
-        maxlength="15"
-        class="name-input"
-      />
+      <div class="decorative-line"></div>
     </div>
 
-    @if (error) {
-      <div class="alert alert-error">{{ error }}</div>
-    }
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn" [class.active]="activeTab === 'play'" (click)="switchTab('play')">Spielen</button>
+      <button class="tab-btn" [class.active]="activeTab === 'scoreboard'" (click)="switchTab('scoreboard')">Bestenliste</button>
+      <button class="tab-btn" [class.active]="activeTab === 'account'" (click)="switchTab('account')">Account</button>
+    </div>
 
-    <!-- Bot Options -->
-    <div class="bot-options">
-      <label class="checkbox-label">
-        <input type="checkbox" [(ngModel)]="withBots">
-        <span>Gegen Bots spielen?</span>
-      </label>
+    <!-- Tab Content: Play -->
+    <div class="tab-content" *ngIf="activeTab === 'play'">
+      <p class="subtitle">
+        <span *ngIf="isLoggedIn" class="logged-in-badge">Angemeldet als: <strong>{{ username }}</strong></span>
+        <span *ngIf="!isLoggedIn">Erstelle einen neuen Raum oder tritt einem bei.</span>
+      </p>
 
-      @if (withBots) {
-        <div class="bot-settings">
-          <div class="setting-row">
-             <label>Anzahl Bots: {{ botCount }}</label>
-             <input type="range" min="1" max="5" [(ngModel)]="botCount">
-          </div>
-          <div class="setting-row">
-             <label>Schwierigkeit:</label>
-             <select [(ngModel)]="difficulty">
-                 <option value="easy">Leicht</option>
-                 <option value="medium">Mittel</option>
-                 <option value="hard">Schwer</option>
-             </select>
-          </div>
-        </div>
+      <div class="input-group" *ngIf="!isLoggedIn">
+        <input 
+          type="text" 
+          placeholder="Dein Piratenname (Gast)" 
+          [(ngModel)]="username" 
+          maxlength="15"
+          class="name-input"
+        />
+      </div>
+
+      @if (error) {
+        <div class="alert alert-error">{{ error }}</div>
       }
-    </div>
 
-    <button class="btn-primary full-width" (click)="createRoom()" [disabled]="loading || !isValidName()">
-      @if (loading) { Läd... } @else { 
-          @if (withBots) { Spiel mit Bots starten } @else { Neuen Raum erstellen }
-      }
-    </button>
+      <!-- Bot Options -->
+      <div class="bot-options">
+        <label class="checkbox-label">
+          <input type="checkbox" [(ngModel)]="withBots">
+          <span>Gegen Bots spielen?</span>
+        </label>
 
-    <div class="divider"><span>oder</span></div>
+        @if (withBots) {
+          <div class="bot-settings">
+            <div class="setting-row">
+               <label>Anzahl Bots: {{ botCount }}</label>
+               <input type="range" min="1" max="5" [(ngModel)]="botCount">
+            </div>
+            <div class="setting-row">
+               <label>Schwierigkeit:</label>
+               <select [(ngModel)]="difficulty">
+                   <option value="easy">Leicht</option>
+                   <option value="medium">Mittel</option>
+                   <option value="hard">Schwer</option>
+               </select>
+            </div>
+          </div>
+        }
+      </div>
 
-    <div class="join-row">
-      <input
-        type="text"
-        placeholder="Raum-ID"
-        [(ngModel)]="joinCode"
-        (keyup.enter)="joinRoom()"
-        maxlength="8"
-        class="code-input"
-        autocomplete="off"
-        spellcheck="false"
-      />
-      <button class="btn-ghost" (click)="joinRoom()" [disabled]="!joinCode.trim() || !isValidName()">
-        Beitreten
+      <button class="btn-primary full-width" (click)="createRoom()" [disabled]="loading || !isValidName()">
+        @if (loading) { Läd... } @else { 
+            @if (withBots) { Spiel mit Bots starten } @else { Neuen Raum erstellen }
+        }
       </button>
+
+      <div class="divider"><span>oder</span></div>
+
+      <div class="join-row">
+        <input
+          type="text"
+          placeholder="Raum-ID"
+          [(ngModel)]="joinCode"
+          (keyup.enter)="joinRoom()"
+          maxlength="8"
+          class="code-input"
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <button class="btn-ghost" (click)="joinRoom()" [disabled]="!joinCode.trim() || !isValidName()">
+          Beitreten
+        </button>
+      </div>
     </div>
+
+    <!-- Tab Content: Scoreboard -->
+    <div class="tab-content scoreboard-tab" *ngIf="activeTab === 'scoreboard'">
+      <h2 class="tab-title">Halle der Legenden</h2>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Rang</th>
+              <th>Pirat</th>
+              <th>Siege</th>
+              <th>Spiele</th>
+              <th>Punkte</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of leaderboard; let i = index">
+              <td>#{{ i + 1 }}</td>
+              <td class="player-name">{{ p.username }}</td>
+              <td>{{ p.gamesWon }}</td>
+              <td>{{ p.gamesPlayed }}</td>
+              <td>{{ p.totalScore }}</td>
+            </tr>
+            <tr *ngIf="leaderboard.length === 0">
+              <td colspan="5" style="text-align: center; color: #888;">Noch keine Legenden verzeichnet.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab Content: Account -->
+    <div class="tab-content account-tab" *ngIf="activeTab === 'account'">
+      
+      <div *ngIf="isLoggedIn" class="logged-in-view">
+        <div class="avatar-large">{{ username.charAt(0).toUpperCase() }}</div>
+        <h2>Ahoi, {{ username }}!</h2>
+        <p>Du bist bereit, die Meere zu erobern.</p>
+        <button class="btn-ghost" (click)="logout()" style="margin-top: 20px;">Ausloggen</button>
+      </div>
+
+      <div *ngIf="!isLoggedIn" class="auth-forms">
+        <div class="auth-toggle">
+            <button [class.active]="accMode === 'login'" (click)="accMode = 'login'">Einloggen</button>
+            <button [class.active]="accMode === 'register'" (click)="accMode = 'register'">Registrieren</button>
+        </div>
+
+        @if (accError) { <div class="alert alert-error">{{ accError }}</div> }
+        @if (accSuccess) { <div class="alert alert-success" style="color: #69f0ae; background: rgba(105, 240, 174, 0.1); border: 1px solid #69f0ae; padding: 10px; border-radius: 4px;">{{ accSuccess }}</div> }
+
+        <input type="text" placeholder="Benutzername" [(ngModel)]="accUsername" class="name-input auth-input" />
+        <input type="password" placeholder="Passwort" [(ngModel)]="accPassword" class="name-input auth-input" style="margin-top: 10px;" />
+
+        <button *ngIf="accMode === 'login'" class="btn-primary full-width" style="margin-top: 15px;" (click)="doLogin()">Login</button>
+        <button *ngIf="accMode === 'register'" class="btn-primary full-width" style="margin-top: 15px;" (click)="doRegister()">Account Erstellen</button>
+      </div>
+
+    </div>
+
   </div>
 </div>

@@ -24,8 +24,15 @@ export class SocketService implements OnDestroy {
 
   // --- Room Events ---
 
-  joinRoom(roomId: string, playerName: string) {
-    this.socket.emit('room:join', { roomId, playerName });
+  joinRoom(roomId: string, playerName: string, isGuest: boolean = true) {
+    if (this.socket.connected) {
+        this.socket.emit('room:join', { roomId, playerName, isGuest });
+    } else {
+        this.socket.once('connect', () => {
+            this.socket.emit('room:join', { roomId, playerName, isGuest });
+        });
+        this.connect();
+    }
   }
 
   leaveRoom() {
@@ -70,8 +77,16 @@ export class SocketService implements OnDestroy {
     this.socket.emit('game:bid', { roomId, bid });
   }
 
-  playCard(roomId: string, cardId: string) {
-    this.socket.emit('game:play', { roomId, cardId });
+  playCard(roomId: string, cardId: string, playedAs?: 'pirate' | 'escape') {
+    this.socket.emit('game:play', { roomId, cardId, playedAs });
+  }
+
+  submitPirateAction(roomId: string, actionData: any) {
+    this.socket.emit('game:pirate_action', { roomId, actionData });
+  }
+
+  onPirateActionJack(): Observable<any> {
+    return this.fromEvent<any>('pirate_action_jack');
   }
 
   onGameState(): Observable<any> {
