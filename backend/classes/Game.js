@@ -3,29 +3,226 @@ const Player = require('./Player');
 const Bot = require('./Bot');
 const userManager = require('../userManager');
 
+const DEFAULT_RULE_SETTINGS = Object.freeze({
+    enableBonusPoints: true,
+    enablePirateAbilities: true,
+    enableLootCards: true,
+    enableSeaMonsters: true
+});
+
+const GAME_MODES = Object.freeze({
+    normal: {
+        id: 'normal',
+        name: 'Normal',
+        cardsPerRound: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    },
+    volle_fahrt_voraus: {
+        id: 'volle_fahrt_voraus',
+        name: 'Volle Fahrt voraus',
+        cardsPerRound: [2, 2, 4, 4, 6, 6, 8, 8, 10, 10]
+    },
+    ueberraschungsangriff: {
+        id: 'ueberraschungsangriff',
+        name: 'Überraschungsangriff',
+        cardsPerRound: [6, 7, 8, 9, 10]
+    },
+    schuss_vor_den_bug: {
+        id: 'schuss_vor_den_bug',
+        name: 'Schuss vor den Bug',
+        cardsPerRound: [5, 5, 5, 5, 5]
+    },
+    volle_breitseite: {
+        id: 'volle_breitseite',
+        name: 'Volle Breitseite',
+        cardsPerRound: [10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
+    },
+    starker_wellengang: {
+        id: 'starker_wellengang',
+        name: 'Starker Wellengang',
+        cardsPerRound: [9, 9, 7, 7, 5, 5, 3, 3, 1, 1]
+    },
+    schlafenszeit: {
+        id: 'schlafenszeit',
+        name: 'Schlafenszeit',
+        cardsPerRound: [1]
+    }
+});
+
+const DEFAULT_GAME_MODE_ID = 'normal';
+
 class Game {
-  constructor(roomId, io) {
+  constructor(roomId, io, options = {}) {
     this.id = roomId;
     this.io = io;
     this.players = [];
-    this.deck = new Deck();
+        this.maxPlayers = 8;
+                this.ruleSettings = Game.normalizeRuleSettings(options.ruleSettings);
+        this.deck = new Deck({ ruleSettings: this.ruleSettings });
     this.round = 0;
     this.maxRounds = 10;
+        this.createdAt = Date.now();
     this.phase = 'lobby'; // lobby, bidding, playing, finished
     this.currentTrick = []; // { playerId, card }
     this.startPlayerIndex = 0;
     this.currentPlayerIndex = 0;
     this.lastTrickWinner = null;
+        this.turnTimer = null;
+        this.turnDeadline = null;
+        this.pirateActionData = null;
+        this.lootAlliances = [];
+        this.discardPile = [];
+        const requestedModeId = (options.gameModeId ?? '').toString().trim().toLowerCase();
+        this.gameModeId = Game.isValidGameMode(requestedModeId) ? requestedModeId : DEFAULT_GAME_MODE_ID;
+        this.roundCardCounts = [...GAME_MODES[this.gameModeId].cardsPerRound];
+        this.currentRoundCardCount = this.roundCardCounts[0] || 0;
   }
+
+    static normalizeRuleSettings(rawSettings = {}) {
+        const settings = rawSettings && typeof rawSettings === 'object' ? rawSettings : {};
+        return {
+            enableBonusPoints: typeof settings.enableBonusPoints === 'boolean' ? settings.enableBonusPoints : DEFAULT_RULE_SETTINGS.enableBonusPoints,
+            enablePirateAbilities: typeof settings.enablePirateAbilities === 'boolean' ? settings.enablePirateAbilities : DEFAULT_RULE_SETTINGS.enablePirateAbilities,
+            enableLootCards: typeof settings.enableLootCards === 'boolean' ? settings.enableLootCards : DEFAULT_RULE_SETTINGS.enableLootCards,
+            enableSeaMonsters: typeof settings.enableSeaMonsters === 'boolean' ? settings.enableSeaMonsters : DEFAULT_RULE_SETTINGS.enableSeaMonsters
+        };
+    }
+
+    static getDefaultGameModeId() {
+        return DEFAULT_GAME_MODE_ID;
+    }
+
+    static isValidGameMode(modeId) {
+        return !!GAME_MODES[(modeId ?? '').toString().trim().toLowerCase()];
+    }
+
+    static getAvailableGameModes() {
+        return Object.values(GAME_MODES).map(mode => ({
+            id: mode.id,
+            name: mode.name,
+            cardsPerRound: [...mode.cardsPerRound]
+        }));
+    }
+
+    getGameMode() {
+        return GAME_MODES[this.gameModeId] || GAME_MODES[DEFAULT_GAME_MODE_ID];
+    }
+
+    getFirstBotIndex() {
+        return this.players.findIndex(p => p.isBot);
+    }
+
+    hasPlayerName(name) {
+        const lowerName = (name ?? '').toString().trim().toLowerCase();
+        if (!lowerName) return false;
+        return this.players.some(p => p.name.toLowerCase() === lowerName);
+    }
+
+    replaceBotWithHuman(id, name) {
+        const botIndex = this.getFirstBotIndex();
+        if (botIndex === -1) {
+            return { success: false, reason: 'no_bot_to_replace' };
+        }
+
+        const bot = this.players[botIndex];
+        const human = new Player(id, name);
+        human.hand = Array.isArray(bot.hand) ? [...bot.hand] : [];
+        human.bid = bot.bid ?? null;
+        human.tricksWon = bot.tricksWon || 0;
+        human.score = bot.score || 0;
+        human.bonusPoints = bot.bonusPoints || 0;
+        human.scoresHistory = Array.isArray(bot.scoresHistory) ? [...bot.scoresHistory] : [];
+        human.lastRoundScore = bot.lastRoundScore || 0;
+        human.rascalWager = bot.rascalWager || 0;
+
+        this.players[botIndex] = human;
+        this.currentTrick = this.currentTrick.map(t => (t.playerId === bot.id ? { ...t, playerId: id } : t));
+
+        if (this.lastTrickWinner === bot.id) {
+            this.lastTrickWinner = id;
+        }
+
+        if (this.pirateActionData?.playerId === bot.id) {
+            this.pirateActionData = {
+                ...this.pirateActionData,
+                playerId: id
+            };
+        }
+
+        if (this.phase === 'playing' && this.currentPlayerIndex === botIndex) {
+            if (this.turnTimer) {
+                clearTimeout(this.turnTimer);
+                this.turnTimer = null;
+            }
+            this.turnDeadline = null;
+            this.checkNextToPlay();
+        }
+
+        return { success: true, replacedBot: true, replacedBotName: bot.name };
+    }
+
+    addHumanPlayer(id, name, allowReplaceBot = true) {
+        const normalizedName = (name ?? '').toString().trim();
+        if (!normalizedName) return { success: false, reason: 'invalid_name' };
+        if (this.hasPlayerName(normalizedName)) return { success: false, reason: 'name_taken' };
+        if (this.phase === 'finished') return { success: false, reason: 'game_finished' };
+
+        const canAddInLobby = this.phase === 'lobby' && this.players.length < this.maxPlayers;
+        if (canAddInLobby) {
+            this.players.push(new Player(id, normalizedName));
+            return { success: true, replacedBot: false };
+        }
+
+        if (!allowReplaceBot) {
+            return { success: false, reason: this.phase === 'lobby' ? 'room_full' : 'game_started' };
+        }
+
+        const replaceResult = this.replaceBotWithHuman(id, normalizedName);
+        if (!replaceResult.success) {
+            return {
+                success: false,
+                reason: this.phase === 'lobby' ? 'room_full' : 'no_bot_to_replace'
+            };
+        }
+
+        return replaceResult;
+    }
+
+    getPublicRoomInfo() {
+        const botCount = this.players.filter(p => p.isBot).length;
+        const hasOpenSlot = this.phase === 'lobby' && this.players.length < this.maxPlayers;
+        const canReplaceBot = botCount > 0 && this.phase !== 'finished';
+        const canJoin = hasOpenSlot || canReplaceBot;
+        const mode = this.getGameMode();
+
+        return {
+            roomId: this.id,
+            createdAt: this.createdAt,
+            phase: this.phase,
+            round: this.round,
+            gameModeId: mode.id,
+            gameModeName: mode.name,
+            ruleSettings: this.ruleSettings,
+            playerCount: this.players.length,
+            botCount,
+            humanCount: this.players.length - botCount,
+            maxPlayers: this.maxPlayers,
+            canJoin,
+            joinMode: hasOpenSlot ? 'open_slot' : (canReplaceBot ? 'replace_bot' : 'closed')
+        };
+    }
 
   addPlayer(id, name, isBot = false, difficulty = 'medium') {
     if (this.phase !== 'lobby') return false;
-    if (this.players.length >= 8) return false;
+        if (this.players.length >= this.maxPlayers) return false;
+
+        const normalizedName = (name ?? '').toString().trim();
+        if (!normalizedName) return false;
+        if (this.hasPlayerName(normalizedName)) return false;
     
     if (isBot) {
-        this.players.push(new Bot(id, name, difficulty));
+                this.players.push(new Bot(id, normalizedName, difficulty));
     } else {
-        this.players.push(new Player(id, name));
+                this.players.push(new Player(id, normalizedName));
     }
     return true;
   }
@@ -49,25 +246,40 @@ class Game {
   }
 
   start() {
+    if (this.phase !== 'lobby') return;
     if (this.players.length < 2) return; // Minimum 2 players
     
-    // Adjust max rounds based on player count (Total 69 cards)
-    // 7 players: Max 9 rounds
-    // 8 players: Max 8 rounds
-    const deckSize = 69;
-    this.maxRounds = Math.min(10, Math.floor(deckSize / this.players.length));
+        const deckSize = this.deck.cards.length;
+        const maxCardsPerRound = Math.floor(deckSize / this.players.length);
+        const configuredRoundCards = [...this.getGameMode().cardsPerRound];
+        const playableRoundCards = configuredRoundCards.filter(c => c > 0 && c <= maxCardsPerRound);
+
+        if (playableRoundCards.length === 0) {
+            this.io.in(this.id).emit('errorNotification', `Der Spielmodus "${this.getGameMode().name}" ist mit ${this.players.length} Spielern nicht spielbar.`);
+            return;
+        }
+
+        if (playableRoundCards.length < configuredRoundCards.length) {
+            this.io.in(this.id).emit('notification', `Spielmodus angepasst: ${configuredRoundCards.length - playableRoundCards.length} Runde(n) sind mit ${this.players.length} Spielern nicht möglich.`);
+        }
+
+    this.roundCardCounts = playableRoundCards;
+    this.maxRounds = this.roundCardCounts.length;
 
     this.round = 1;
     this.startRound();
   }
 
   startRound() {
-    this.deck.reset();
+        this.deck.reset({ ruleSettings: this.ruleSettings });
+        this.discardPile = [];
+        const cardsThisRound = this.roundCardCounts[this.round - 1] || this.roundCardCounts[this.roundCardCounts.length - 1] || 1;
+        this.currentRoundCardCount = cardsThisRound;
     
     // Deal cards
     this.players.forEach(p => {
         p.resetRound();
-        p.hand = this.deck.deal(this.round);
+        p.hand = this.deck.deal(cardsThisRound);
     });
 
     this.phase = 'bidding';
@@ -79,7 +291,7 @@ class Game {
         if (p.isBot) {
             // Simulate "thinking" delay
             setTimeout(() => {
-                const bid = p.calculateBid(this.round);
+                const bid = p.calculateBid(cardsThisRound);
                 this.handleBid(p.id, bid);
             }, 500 + Math.random() * 1000);
         }
@@ -92,8 +304,10 @@ class Game {
     const player = this.players.find(p => p.id === playerId);
     if (!player || this.phase !== 'bidding') return;
     
-    // Ensure bid is a number
-    player.bid = parseInt(bid, 10);
+        // Ensure bid is a number within allowed range
+        const parsedBid = parseInt(bid, 10);
+        if (Number.isNaN(parsedBid)) return;
+        player.bid = Math.max(0, Math.min(parsedBid, player.hand.length));
 
     // Check if everyone has bid
     if (this.players.every(p => p.bid !== null)) {
@@ -114,67 +328,105 @@ class Game {
       
       const currentPlayer = this.players[this.currentPlayerIndex];
       
-      if (currentPlayer && currentPlayer.isBot) {
-          // If bot needs to play, wait a bit
-          setTimeout(() => {
-              // Re-check phase to prevent race conditions
-              if (this.phase !== 'playing' || this.players[this.currentPlayerIndex].id !== currentPlayer.id) return;
+        if (this.turnTimer) {
+            clearTimeout(this.turnTimer);
+            this.turnTimer = null;
+        }
+        this.turnDeadline = null;
 
-              // Determine lead suit if not first
-              let leadSuit = null;
-              for (const t of this.currentTrick) {
-                  if (t.card.type === 'suit') {
-                      leadSuit = t.card.color;
-                      break;
-                  }
-              }
+        if (currentPlayer && currentPlayer.isBot) {
+            // If bot needs to play, wait a bit
+            setTimeout(() => {
+                // Re-check phase to prevent race conditions
+                if (this.phase !== 'playing' || this.players[this.currentPlayerIndex].id !== currentPlayer.id) return;
 
-              // Use Bot's chooseCard method
-              const cardToPlay = currentPlayer.chooseCard(this.currentTrick, leadSuit);
-              
-              if (cardToPlay) {
-                   let playedAs = null;
-                   if (cardToPlay.type === 'tigress') {
-                       // Bot Strategy for Tigress:
-                       // If bot wants tricks (tricksWon < bid), play as Pirate.
-                       // Otherwise play as Escape to avoid winning unwanted tricks.
-                       if (currentPlayer.tricksWon < currentPlayer.bid) {
-                           playedAs = 'pirate';
-                       } else {
-                           playedAs = 'escape';
-                       }
-                   }
-                   this.handlePlayCard(currentPlayer.id, cardToPlay.id, playedAs);
-              }
+                // Determine lead suit if not first
+                let leadSuit = null;
+                for (const t of this.currentTrick) {
+                    if (t.card.type === 'suit') {
+                        leadSuit = t.card.color;
+                        break;
+                    }
+                }
 
-          }, 500 + Math.random() * 500); // Faster variable delay for realism
-      }
-  }
+                // Use Bot's chooseCard method
+                const cardToPlay = currentPlayer.chooseCard(this.currentTrick, leadSuit);
 
-  handlePlayCard(playerId, cardId, playedAs) {
-    if (this.phase !== 'playing') return;
-    
-    // Validate Current Trick State (Prevent playing if trick is already full/resolving)
-    if (this.currentTrick.length >= this.players.length) return;
+                if (cardToPlay) {
+                     let playedAs = null;
+                     if (cardToPlay.type === 'tigress') {
+                         if (currentPlayer.tricksWon < currentPlayer.bid) {
+                             playedAs = 'pirate';
+                         } else {
+                             playedAs = 'escape';
+                         }
+                     }
+                     this.handlePlayCard(currentPlayer.id, cardToPlay.id, playedAs);
+                }
 
-    const playerIndex = this.players.findIndex(p => p.id === playerId);
-    if (playerIndex !== this.currentPlayerIndex) return;
-
-    const player = this.players[playerIndex];
-    const cardIndex = player.hand.findIndex(c => c.id === cardId);
-    if (cardIndex === -1) return;
-
-    const card = player.hand[cardIndex];
-
-    // Validation: Must serve suit
-    if (!this.isValidMove(player, card)) {
-        this.io.to(playerId).emit('errorNotification', 'Du musst Farbe bedienen!');
-        return;
+            }, 500 + Math.random() * 500); // Faster variable delay for realism
+        } else if (currentPlayer && !currentPlayer.isBot) {
+            // Start 15-second timer for human players
+            this.turnDeadline = Date.now() + 15000;
+            this.turnTimer = setTimeout(() => {
+                this.autoPlayCard(currentPlayer);
+            }, 15000);
+            this.emitState(); // update frontend with new turnDeadline
+        }
     }
 
-    // Play card
-    player.hand.splice(cardIndex, 1);
-    this.currentTrick.push({ playerId, card, playedAs });
+    autoPlayCard(player) {
+         if (this.phase !== 'playing' || this.players[this.currentPlayerIndex].id !== player.id) return;
+
+         const validCards = player.hand.filter(c => this.isValidMove(player, c));
+         if (validCards.length === 0) return;
+
+         const minScoreCard = validCards.reduce((prev, curr) => {
+              if(curr.type === 'escape') return curr;
+              if(prev.type === 'escape') return prev;
+              return curr;
+         }, validCards[0]);
+
+         const cardToPlay = minScoreCard;
+         let playedAs = null;
+         if (cardToPlay.type === 'tigress') {
+             playedAs = 'escape';
+         }
+
+         this.io.in(this.id).emit('toast', player.name + ' hat zu lange gebraucht. Eine Karte wurde automatisch gespielt.');
+         this.handlePlayCard(player.id, cardToPlay.id, playedAs);
+    }
+
+    handlePlayCard(playerId, cardId, playedAs) {
+      if (this.phase !== 'playing') return;
+
+      if (this.turnTimer && this.players[this.currentPlayerIndex] && this.players[this.currentPlayerIndex].id === playerId) {
+          clearTimeout(this.turnTimer);
+          this.turnTimer = null;
+          this.turnDeadline = null;
+      }
+
+      // Validate Current Trick State (Prevent playing if trick is already full/resolving)
+      if (this.currentTrick.length >= this.players.length) return;
+
+      const playerIndex = this.players.findIndex(p => p.id === playerId);
+      if (playerIndex !== this.currentPlayerIndex) return;
+
+      const player = this.players[playerIndex];
+      const cardIndex = player.hand.findIndex(c => c.id === cardId);
+      if (cardIndex === -1) return;
+
+      const card = player.hand[cardIndex];
+
+      // Validation: Must serve suit
+      if (!this.isValidMove(player, card)) {
+          this.io.to(playerId).emit('errorNotification', 'Du musst Farbe bedienen!');
+          return;
+      }
+
+      // Play card
+      player.hand.splice(cardIndex, 1);
+      this.currentTrick.push({ playerId, card, playedAs });
 
     // Broadcast play to all
     this.io.in(this.id).emit('cardPlayed', { playerId, card, playedAs });
@@ -188,8 +440,8 @@ class Game {
         // Determine winner immediately for visual feedback.
         // Keep this logic in sync with resolveTrick() so the UI highlight is correct.
         let winnerId = null;
-        const krakenIndex = this.currentTrick.findIndex(t => t.card.type === 'kraken');
-        const whaleIndex = this.currentTrick.findIndex(t => t.card.type === 'white_whale');
+        const krakenIndex = this.ruleSettings.enableSeaMonsters ? this.currentTrick.findIndex(t => t.card.type === 'kraken') : -1;
+        const whaleIndex = this.ruleSettings.enableSeaMonsters ? this.currentTrick.findIndex(t => t.card.type === 'white_whale') : -1;
 
         let krakenEffect = false;
         let whaleDestroyed = false;
@@ -271,9 +523,18 @@ class Game {
     return true;
   }
 
+    addCurrentTrickToDiscardPile() {
+            if (!Array.isArray(this.discardPile)) this.discardPile = [];
+            this.currentTrick.forEach(t => {
+                    if (t?.card) {
+                            this.discardPile.push(t.card);
+                    }
+            });
+    }
+
   resolveTrick() {
-    const krakenIndex = this.currentTrick.findIndex(t => t.card.type === 'kraken');
-    const whaleIndex = this.currentTrick.findIndex(t => t.card.type === 'white_whale');
+    const krakenIndex = this.ruleSettings.enableSeaMonsters ? this.currentTrick.findIndex(t => t.card.type === 'kraken') : -1;
+    const whaleIndex = this.ruleSettings.enableSeaMonsters ? this.currentTrick.findIndex(t => t.card.type === 'white_whale') : -1;
 
     let winnerId = null; // Who actually wins the trick points
     let nextPlayerId = null; // Who leads next
@@ -323,19 +584,21 @@ class Game {
             // Apply Loot Bonus (Allianz)
             // Die Allianz gilt zwischen dem Spieler der Loot gespielt hat und dem Stichgewinner.
             // Die Punkte (jeweils 20) gibt es aber nur AM ENDE der Runde, wenn BEIDE ihr Gebot exakt erfüllen.
-            this.currentTrick.forEach(t => {
-                if (t.card.type === 'loot') {
-                    if (!this.lootAlliances) this.lootAlliances = [];
-                    // Speichere die Allianz für die Endabrechnung
-                    this.lootAlliances.push({
-                        player1Id: t.playerId,
-                        player2Id: winner.id
-                    });
-                }
-            });
+            if (this.ruleSettings.enableBonusPoints && this.ruleSettings.enableLootCards) {
+                this.currentTrick.forEach(t => {
+                    if (t.card.type === 'loot') {
+                        if (!this.lootAlliances) this.lootAlliances = [];
+                        // Speichere die Allianz für die Endabrechnung
+                        this.lootAlliances.push({
+                            player1Id: t.playerId,
+                            player2Id: winner.id
+                        });
+                    }
+                });
+            }
 
             // Weitere Bonuspunkte
-            if (whaleIndex === -1) { // Wal negiert alle Boni außer evtl 14er (wir vereinfachen hier: Wal negiert Skull King Boni)
+            if (this.ruleSettings.enableBonusPoints && whaleIndex === -1) { // Wal negiert alle Boni außer evtl 14er (wir vereinfachen hier: Wal negiert Skull King Boni)
                 const getEffectiveType = (t) => t.card.type === 'tigress' ? t.playedAs || 'pirate' : t.card.type;
                 
                 const hasSkullKing = this.currentTrick.find(t => getEffectiveType(t) === 'skullking');
@@ -352,18 +615,20 @@ class Game {
             }
 
             // Bonus für 14er im Stich (muss nicht die Siegerkarte sein)
-            const black14 = this.currentTrick.find(t => t.card.type === 'suit' && t.card.color === 'black' && t.card.value === 14);
-            const color14s = this.currentTrick.filter(t => t.card.type === 'suit' && t.card.color !== 'black' && t.card.value === 14);
-            
-            if (black14) {
-                winner.bonusPoints = (winner.bonusPoints || 0) + 20;
-            }
-            if (color14s.length > 0) {
-                winner.bonusPoints = (winner.bonusPoints || 0) + (color14s.length * 10);
+            if (this.ruleSettings.enableBonusPoints) {
+                const black14 = this.currentTrick.find(t => t.card.type === 'suit' && t.card.color === 'black' && t.card.value === 14);
+                const color14s = this.currentTrick.filter(t => t.card.type === 'suit' && t.card.color !== 'black' && t.card.value === 14);
+
+                if (black14) {
+                    winner.bonusPoints = (winner.bonusPoints || 0) + 20;
+                }
+                if (color14s.length > 0) {
+                    winner.bonusPoints = (winner.bonusPoints || 0) + (color14s.length * 10);
+                }
             }
             
             // Piraten Spezial-Fähigkeiten Auswertung
-            if (winningPlay.card.type === 'pirate' && winningPlay.card.pirateName) {
+            if (this.ruleSettings.enablePirateAbilities && winningPlay.card.type === 'pirate' && winningPlay.card.pirateName) {
                 const pName = winningPlay.card.pirateName;
                 if (pName === 'Rosie D\'Laney' || pName === 'Bahij the Bandit' || pName === 'Rascal of Roatan' || pName === 'Harry the Giant' || pName === 'Tortuga Jack') {
                     // Set phase to pirate_action and wait.
@@ -371,6 +636,7 @@ class Game {
                     // We'll handle that inside the pirate action logic.
                     this.currentPlayerIndex = this.players.findIndex(p => p.id === nextPlayerId);
                     this.lastTrickWinner = nextPlayerId;
+                    this.addCurrentTrickToDiscardPile();
                     this.currentTrick = [];
                     
                     this.triggerPirateAction(winner, pName);
@@ -386,6 +652,7 @@ class Game {
         this.lastTrickWinner = nextPlayerId;
     }
 
+    this.addCurrentTrickToDiscardPile();
     this.currentTrick = [];
     this.finishTrickResolution();
   }
@@ -440,25 +707,14 @@ class Game {
       };
 
       if (pName === 'Tortuga Jack') {
-          // New ability: The winner can look at ALL remaining cards in the deck
-          const remainingCards = this.deck.cards;
-          
-          if (!winner.isBot) {
-              // Send all remaining cards to the winner
-                this.io.to(winner.id).emit('pirate_action_jack', { deck: remainingCards });
-                // Let EVERYONE know via toast
-                this.io.in(this.id).emit('toast', `${winner.name} durchsucht den restlichen Kartenstapel (Tortuga Jack).`);
-          } else {
-              // Bots don't need UI time, but we simulate thinking
-              this.io.in(this.id).emit('toast', `${winner.name} durchsucht den restlichen Kartenstapel (Tortuga Jack).`);
-              setTimeout(() => {
-                  this.handleBotPirateAction(winner, pName);
-              }, 2000);
-          }
+          const revealedCards = [...this.deck.cards];
+          this.io.to(winner.id).emit('pirate_action_jack', { deck: revealedCards, playerId: winner.id });
+          this.io.in(this.id).emit('toast', `${winner.name} schaut sich alle nicht ausgegebenen Karten in Reihenfolge an (Tortuga Jack).`);
       }
 
       if (pName === 'Bahij the Bandit') {
-           this.pirateActionData.drawnCards = this.deck.deal(2);
+         const drawCount = Math.min(2, this.discardPile.length);
+         this.pirateActionData.drawnCards = this.discardPile.splice(this.discardPile.length - drawCount, drawCount);
            winner.hand.push(...this.pirateActionData.drawnCards);
       }
 
@@ -484,11 +740,15 @@ class Game {
           bot.hand.sort((a, b) => bot.getCardPower(a) - bot.getCardPower(b));
           actionData.discardIds = [bot.hand[0].id, bot.hand[1].id];
       } else if (pName === 'Rascal of Roatan') {
-          // If we already perfectly achieved our bid and have empty/terrible hand, wager 10
-          if (bot.tricksWon === bot.bid && bot.hand.every(c => bot.getCardPower(c) < 50)) {
-              actionData.wager = 10;
+          if (!this.ruleSettings.enableBonusPoints) {
+              actionData.wager = 0;
           } else {
-              actionData.wager = 0; // Better safe than sorry
+              // If we already perfectly achieved our bid and have empty/terrible hand, wager 10
+              if (bot.tricksWon === bot.bid && bot.hand.every(c => bot.getCardPower(c) < 50)) {
+                  actionData.wager = 10;
+              } else {
+                  actionData.wager = 0; // Better safe than sorry
+              }
           }
       } else if (pName === 'Harry the Giant') {
           // Smart bid adjustments
@@ -529,7 +789,7 @@ class Game {
               player.hand = player.hand.filter(c => !actionData.discardIds.includes(c.id));
           }
       } else if (pName === 'Rascal of Roatan') {
-          player.rascalWager = actionData.wager || 0; // 0, 10, or 20
+          player.rascalWager = this.ruleSettings.enableBonusPoints ? (actionData.wager || 0) : 0;
       } else if (pName === 'Harry the Giant') {
           const change = actionData.bidChange || 0;
           if (change === 1 || change === -1 || change === 0) {
@@ -547,7 +807,7 @@ class Game {
       // 0. Check White Whale (Weißer Wal)
       // Effect: All special cards become useless (value 0/Escape).
       // All colors equal value. Winner: Highest number card.
-      const whaleIndex = trick.findIndex(t => t.card.type === 'white_whale');
+    const whaleIndex = this.ruleSettings.enableSeaMonsters ? trick.findIndex(t => t.card.type === 'white_whale') : -1;
       if (whaleIndex !== -1) {
           // Filter for number cards only (suits)
           const numberCards = trick.filter(t => t.card.type === 'suit');
@@ -640,7 +900,7 @@ class Game {
 
   calculateScores() {
       // Evaluate Loot Alliances
-      if (this.lootAlliances) {
+      if (this.ruleSettings.enableBonusPoints && this.lootAlliances) {
           this.lootAlliances.forEach(alliance => {
               const p1 = this.players.find(p => p.id === alliance.player1Id);
               const p2 = this.players.find(p => p.id === alliance.player2Id);
@@ -679,13 +939,15 @@ class Game {
           // To be completely rules-accurate: All bonuses (capture Pirate/SK, 14s, Loot) require exact bid
           // BUT wait! Rascal wager also requires exact bid to WIN, otherwise LOSE.
           if (diff === 0) {
-              totalRoundScore += (p.bonusPoints || 0);
-              if (p.rascalWager) {
-                  totalRoundScore += p.rascalWager;
+              if (this.ruleSettings.enableBonusPoints) {
+                  totalRoundScore += (p.bonusPoints || 0);
+                  if (p.rascalWager) {
+                      totalRoundScore += p.rascalWager;
+                  }
               }
           } else {
               // Failed bid: lose Rascal wager
-              if (p.rascalWager) {
+              if (this.ruleSettings.enableBonusPoints && p.rascalWager) {
                   totalRoundScore -= p.rascalWager;
               }
           }
@@ -729,11 +991,16 @@ class Game {
               roomId: this.id,
               round: this.round,
               maxRounds: this.maxRounds,
+              cardsThisRound: this.currentRoundCardCount,
+              gameMode: {
+                  id: this.getGameMode().id,
+                  name: this.getGameMode().name
+              },
+              ruleSettings: this.ruleSettings,
               phase: this.phase,
               hand: p.hand,
               currentTrick: this.currentTrick,
-              turnIndex: this.currentPlayerIndex,
-              me: { id: p.id, bid: p.bid, score: p.score, tricksWon: p.tricksWon, lastRoundScore: p.lastRoundScore, bonusPoints: p.bonusPoints },
+              turnIndex: this.currentPlayerIndex,                turnDeadline: this.turnDeadline || null,              me: { id: p.id, bid: p.bid, score: p.score, tricksWon: p.tricksWon, lastRoundScore: p.lastRoundScore, bonusPoints: p.bonusPoints },
               players: publicPlayers,
               lastWinnerId: this.lastTrickWinner,
               pirateActionData: this.pirateActionData

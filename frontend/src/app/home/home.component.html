@@ -25,7 +25,7 @@
           type="text" 
           placeholder="Dein Piratenname (Gast)" 
           [(ngModel)]="username" 
-          maxlength="15"
+          maxlength="20"
           class="name-input"
         />
       </div>
@@ -33,6 +33,36 @@
       @if (error) {
         <div class="alert alert-error">{{ error }}</div>
       }
+
+      <div class="mode-options">
+        <label for="gameModeSelect">Spielmodus</label>
+        <select id="gameModeSelect" [(ngModel)]="selectedGameModeId" class="mode-select">
+          <option *ngFor="let mode of gameModes" [value]="mode.id">{{ mode.name }}</option>
+        </select>
+        <p class="mode-hint" *ngIf="selectedGameMode">{{ getModeDescription(selectedGameMode) }}</p>
+      </div>
+
+      <div class="rule-options">
+        <label class="rule-options-title">Regeloptionen</label>
+        <div class="rule-grid">
+          <label class="rule-item">
+            <input type="checkbox" [(ngModel)]="ruleSettings.enableBonusPoints">
+            <span>Mit Bonuspunkten</span>
+          </label>
+          <label class="rule-item">
+            <input type="checkbox" [(ngModel)]="ruleSettings.enablePirateAbilities">
+            <span>Mit Piratenfähigkeit</span>
+          </label>
+          <label class="rule-item">
+            <input type="checkbox" [(ngModel)]="ruleSettings.enableLootCards">
+            <span>Mit Beutekarten</span>
+          </label>
+          <label class="rule-item">
+            <input type="checkbox" [(ngModel)]="ruleSettings.enableSeaMonsters">
+            <span>Mit Krake / Weißer Wal</span>
+          </label>
+        </div>
+      </div>
 
       <!-- Bot Options -->
       <div class="bot-options">
@@ -82,6 +112,37 @@
           Beitreten
         </button>
       </div>
+
+      <div class="open-rooms-panel">
+        <div class="open-rooms-head">
+          <h3>Offene Räume</h3>
+          <button class="btn-ghost btn-small" (click)="loadOpenRooms()" [disabled]="roomsLoading">
+            {{ roomsLoading ? 'Lade...' : 'Aktualisieren' }}
+          </button>
+        </div>
+
+        <div class="open-rooms-empty" *ngIf="!roomsLoading && openRooms.length === 0">
+          Aktuell keine offenen Räume gefunden.
+        </div>
+
+        <div class="open-room-item" *ngFor="let room of openRooms">
+          <div class="room-info">
+            <div class="room-id">#{{ room.roomId }}</div>
+            <div class="room-mode">{{ getRoomModeLabel(room) }}</div>
+            <div class="room-meta">
+              {{ room.playerCount }}/{{ room.maxPlayers }} Spieler • {{ room.botCount }} Bots • {{ getJoinModeLabel(room) }}
+            </div>
+          </div>
+
+          <button
+            class="btn-ghost btn-small"
+            (click)="joinOpenRoom(room.roomId)"
+            [disabled]="loading || !isValidName()"
+          >
+            Beitreten
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- Tab Content: Scoreboard -->
@@ -120,7 +181,47 @@
       <div *ngIf="isLoggedIn" class="logged-in-view">
         <div class="avatar-large">{{ username.charAt(0).toUpperCase() }}</div>
         <h2>Ahoi, {{ username }}!</h2>
-        <p>Du bist bereit, die Meere zu erobern.</p>
+
+        <div class="account-stats" *ngIf="accountData">
+          <div><strong>Spiele:</strong> {{ accountData.gamesPlayed }}</div>
+          <div><strong>Siege:</strong> {{ accountData.gamesWon }}</div>
+          <div><strong>Punkte:</strong> {{ accountData.totalScore }}</div>
+        </div>
+
+        <button class="btn-ghost" (click)="toggleAccountEditor()" style="margin-top: 20px;">
+          {{ showAccountEditor ? 'Abbrechen' : 'Account einsehen & ändern' }}
+        </button>
+
+        <div *ngIf="showAccountEditor" class="account-editor">
+          @if (accountUpdateError) { <div class="alert alert-error">{{ accountUpdateError }}</div> }
+          @if (accountUpdateSuccess) { <div class="alert alert-success" style="color: #69f0ae; background: rgba(105, 240, 174, 0.1); border: 1px solid #69f0ae; padding: 10px; border-radius: 4px;">{{ accountUpdateSuccess }}</div> }
+
+          <input
+            type="text"
+            placeholder="Neuer Benutzername (max. 20)"
+            [(ngModel)]="editUsername"
+            maxlength="20"
+            class="name-input auth-input"
+          />
+          <input
+            type="password"
+            placeholder="Aktuelles Passwort"
+            [(ngModel)]="editCurrentPassword"
+            class="name-input auth-input"
+            style="margin-top: 10px;"
+          />
+          <input
+            type="password"
+            placeholder="Neues Passwort (optional)"
+            [(ngModel)]="editNewPassword"
+            class="name-input auth-input"
+            style="margin-top: 10px;"
+          />
+          <button class="btn-primary full-width" style="margin-top: 15px;" (click)="saveAccountChanges()">
+            Änderungen speichern
+          </button>
+        </div>
+
         <button class="btn-ghost" (click)="logout()" style="margin-top: 20px;">Ausloggen</button>
       </div>
 
@@ -133,7 +234,7 @@
         @if (accError) { <div class="alert alert-error">{{ accError }}</div> }
         @if (accSuccess) { <div class="alert alert-success" style="color: #69f0ae; background: rgba(105, 240, 174, 0.1); border: 1px solid #69f0ae; padding: 10px; border-radius: 4px;">{{ accSuccess }}</div> }
 
-        <input type="text" placeholder="Benutzername" [(ngModel)]="accUsername" class="name-input auth-input" />
+        <input type="text" placeholder="Benutzername" [(ngModel)]="accUsername" maxlength="20" class="name-input auth-input" />
         <input type="password" placeholder="Passwort" [(ngModel)]="accPassword" class="name-input auth-input" style="margin-top: 10px;" />
 
         <button *ngIf="accMode === 'login'" class="btn-primary full-width" style="margin-top: 15px;" (click)="doLogin()">Login</button>

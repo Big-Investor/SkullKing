@@ -27,6 +27,8 @@ export class GameComponent implements OnInit, OnDestroy {
   trickWinnerId: string | null = null;
   private lastRound = 0;
   isProcessingMove: boolean = false;
+  turnRemainingSecs: number | null = null;
+  private turnInterval: any;
 
   // Tigress
   selectedTigress: Card | null = null;
@@ -40,6 +42,7 @@ export class GameComponent implements OnInit, OnDestroy {
   showRascalModal = false;
   showRosieModal = false;
   showTortugaModal = false;
+    canSubmitTortugaAction = false;
   tortugaDeck: Card[] = [];
   tortugaTimeout: any;
 
@@ -92,17 +95,21 @@ export class GameComponent implements OnInit, OnDestroy {
     );
 
     this.subs.add(
-        this.socketService.onPirateActionJack().subscribe((data: { deck: Card[] }) => {
+        this.socketService.onPirateActionJack().subscribe((data: { deck: Card[]; playerId?: string }) => {
             console.log('Received pirate_action_jack with deck:', data.deck);
-            this.tortugaDeck = data.deck;
+            this.tortugaDeck = Array.isArray(data.deck) ? data.deck : [];
+            this.canSubmitTortugaAction = !data.playerId || (this.gameState?.me?.id === data.playerId);
             this.showTortugaModal = true;
-            this.cdr.detectChanges(); // Erzwinge UI-Update!
-            
-            // Automatically hide after 10 seconds and submit
+            this.cdr.detectChanges();
+
             if (this.tortugaTimeout) clearTimeout(this.tortugaTimeout);
-            this.tortugaTimeout = setTimeout(() => {
-                this.submitTortugaAction();
-            }, 10000);
+            if (!this.canSubmitTortugaAction) {
+                this.tortugaTimeout = setTimeout(() => {
+                    this.showTortugaModal = false;
+                    this.canSubmitTortugaAction = false;
+                    this.cdr.detectChanges();
+                }, 10000);
+            }
         })
     );
 
@@ -118,6 +125,19 @@ export class GameComponent implements OnInit, OnDestroy {
         }
 
         this.gameState = state;
+        
+        if (state.turnDeadline) {
+             this.updateTurnTimer(state.turnDeadline);
+             if (this.turnInterval) {
+                 clearInterval(this.turnInterval);
+             }
+             this.turnInterval = setInterval(() => {
+                  this.updateTurnTimer(state.turnDeadline!);
+             }, 1000);
+        } else {
+             this.clearTurnTimer();
+        }
+
         this.isProcessingMove = false; // Reset processing flag on new state
 
         // Check if pirate_action is required for me
@@ -137,19 +157,8 @@ export class GameComponent implements OnInit, OnDestroy {
             this.showHarryModal = false;
         }
 
-        // Auto-Play Last Card if not round 1
-        if (this.gameState.round > 1 && 
-            this.gameState.phase === 'playing' && 
-            this.gameState.hand.length === 1 &&
-            this.gameState.players[this.gameState.turnIndex]?.id === this.gameState.me.id) {
-            
-            // Wait a short moment for better UX
-            setTimeout(() => {
-                if (this.gameState && this.gameState.hand.length === 1) {
-                    this.playCard(this.gameState.hand[0]);
-                }
-            }, 500);
-        }
+        // Auto-play the final hand card as soon as it's your turn.
+        this.tryAutoPlayLastCard();
       })
     );
 
@@ -170,7 +179,32 @@ export class GameComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.clearTurnTimer();
+        if (this.tortugaTimeout) {
+            clearTimeout(this.tortugaTimeout);
+            this.tortugaTimeout = null;
+        }
     this.subs.unsubscribe();
+  }
+
+  updateTurnTimer(deadline: number) {
+      const remaining = deadline - Date.now();
+      if (remaining > 0) {
+          this.turnRemainingSecs = Math.ceil(remaining / 1000);
+      } else {
+          this.turnRemainingSecs = null;
+          this.clearTurnTimer();
+      }
+      this.cdr.detectChanges();
+  }
+
+  clearTurnTimer() {
+      if (this.turnInterval) {
+          clearInterval(this.turnInterval);
+          this.turnInterval = null;
+      }
+      this.turnRemainingSecs = null;
+      this.cdr.detectChanges();
   }
 
   startGame() {
@@ -187,10 +221,47 @@ export class GameComponent implements OnInit, OnDestroy {
 
   submitBid() {
     if (this.roomId && this.gameState) {
-      if (this.bidInput < 0 || this.bidInput > this.gameState.round) return;
+            const maxBid = this.getMaxBid();
+            if (this.bidInput < 0 || this.bidInput > maxBid) return;
       this.socketService.submitBid(this.roomId, this.bidInput);
     }
   }
+
+    getMaxBid(): number {
+            if (!this.gameState) return 0;
+            return this.gameState.cardsThisRound || this.gameState.hand.length || this.gameState.round;
+    }
+
+    private tryAutoPlayLastCard() {
+            const state = this.gameState;
+            if (!state || this.isProcessingMove) return;
+            if (state.phase !== 'playing' || state.hand.length !== 1) return;
+
+            const activePlayer = state.players[state.turnIndex];
+            if (!activePlayer || activePlayer.id !== state.me.id) return;
+
+            // Slight delay to keep UX smooth after incoming state updates.
+            setTimeout(() => {
+                    const latestState = this.gameState;
+                    if (!latestState || this.isProcessingMove || !this.roomId) return;
+                    if (latestState.phase !== 'playing' || latestState.hand.length !== 1) return;
+
+                    const latestActivePlayer = latestState.players[latestState.turnIndex];
+                    if (!latestActivePlayer || latestActivePlayer.id !== latestState.me.id) return;
+
+                    const lastCard = latestState.hand[0];
+                    this.isProcessingMove = true;
+
+                    if (lastCard.type === 'tigress') {
+                            const bidTarget = latestState.me.bid ?? 0;
+                            const choice: 'pirate' | 'escape' = latestState.me.tricksWon < bidTarget ? 'pirate' : 'escape';
+                            this.socketService.playCard(this.roomId, lastCard.id, choice);
+                            return;
+                    }
+
+                    this.socketService.playCard(this.roomId, lastCard.id);
+            }, 300);
+    }
 
   playCard(card: Card) {
     if (this.isProcessingMove) return;
@@ -279,10 +350,17 @@ export class GameComponent implements OnInit, OnDestroy {
           clearTimeout(this.tortugaTimeout);
           this.tortugaTimeout = null;
       }
+      if (!this.canSubmitTortugaAction) {
+          this.showTortugaModal = false;
+          this.canSubmitTortugaAction = false;
+          this.cdr.detectChanges();
+          return;
+      }
       if (this.roomId) {
           console.log('Submitting Tortuga Action DONE');
           this.socketService.submitPirateAction(this.roomId, { done: true });
           this.showTortugaModal = false;
+          this.canSubmitTortugaAction = false;
           this.cdr.detectChanges(); // UI sofort anpassen
       }
   }
