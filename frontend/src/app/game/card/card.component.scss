@@ -362,3 +362,95 @@
         .card-inner { display: none; }
     }
 }
+
+@media (max-width: 768px) {
+    .playing-card {
+        border-width: 3px;
+
+        &.card-sm {
+            width: 52px;
+            height: 78px;
+            font-size: 9px;
+
+            .big-icon {
+                font-size: 20px;
+            }
+        }
+
+        &.card-md {
+            width: 76px;
+            height: 114px;
+            font-size: 11px;
+
+            .big-icon {
+                font-size: 30px;
+            }
+        }
+
+        &.card-lg {
+            width: 96px;
+            height: 144px;
+            font-size: 12px;
+
+            .big-icon {
+                font-size: 36px;
+            }
+        }
+
+        .value {
+            font-size: 1.35em;
+        }
+
+        .icon {
+            font-size: 1.05em;
+        }
+
+        .center-content .pirate-name {
+            font-size: 0.65em;
+            margin-top: 2px;
+            padding: 1px 3px;
+        }
+    }
+}
+
+@media (max-width: 420px) {
+    .playing-card {
+        border-width: 2px;
+
+        &.card-sm {
+            width: 46px;
+            height: 69px;
+            font-size: 8px;
+
+            .big-icon {
+                font-size: 18px;
+            }
+        }
+
+        &.card-md {
+            width: 68px;
+            height: 102px;
+            font-size: 10px;
+
+            .big-icon {
+                font-size: 26px;
+            }
+        }
+
+        &.card-lg {
+            width: 88px;
+            height: 132px;
+            font-size: 11px;
+
+            .big-icon {
+                font-size: 33px;
+            }
+        }
+
+        .played-as-badge {
+            font-size: 0.55rem;
+            padding: 3px 1px;
+            bottom: 5px;
+        }
+    }
+}
