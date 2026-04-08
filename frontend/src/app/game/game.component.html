@@ -2,7 +2,7 @@
 
     <!-- ADDED: My Turn Banner -->
     <div class="my-turn-banner" *ngIf="gameState.phase === 'playing' && gameState.players[gameState.turnIndex] && gameState.players[gameState.turnIndex].id === gameState.me.id">
-        DU BIST DRAN!
+        DU BIST DRAN! <span *ngIf="turnRemainingSecs !== null">({{ turnRemainingSecs }}s)</span>
     </div>
 
     <!-- Notifications -->
@@ -15,6 +15,9 @@
     <div class="hud">
         <div class="round-info">
             <h2>Runde {{ gameState.round }} / {{ gameState.maxRounds }}</h2>
+            <div class="mode-caption" *ngIf="gameState.gameMode">
+                {{ gameState.gameMode.name }} • {{ gameState.cardsThisRound || gameState.hand.length }} Karten
+            </div>
             <span class="phase-badge">{{ gameState.phase }}</span>
             <button (click)="showHelp = !showHelp" class="btn-help" title="Karten-Erklärung">❓</button>
         </div>
@@ -53,7 +56,7 @@
                 </div>
                 <div class="desc">
                     <strong>Bahij the Bandit</strong>
-                    <br>Schlägt alle Farben und Flucht. Gewinnt er, darfst du 2 Karten ziehen und danach 2 Karten aus der Hand abwerfen.
+                    <br>Schlägt alle Farben und Flucht. Gewinnt er, nimmst du 2 Karten vom Ablagestapel und wirfst danach 2 Karten aus der Hand ab.
                 </div>
             </li>
             <li class="help-item">
@@ -80,7 +83,7 @@
                 </div>
                 <div class="desc">
                     <strong>Tortuga Jack</strong>
-                    <br>Schlägt alle Farben und Flucht. Gewinnt er, deckt er 2 Karten vom Nachziehstapel für alle sichtbar auf.
+                    <br>Schlägt alle Farben und Flucht. Gewinnt er, sieht der Gewinner alle nicht ausgegebenen Karten in unveränderter Reihenfolge.
                 </div>
             </li>
             <li class="help-item">
@@ -160,7 +163,7 @@
         <h3>Punkte & Boni</h3>
         <p>Stich angesagt & getroffen: 20 Pkt pro Stich.</p>
         <p>0 angesagt & getroffen: Runde * 10 Pkt.</p>
-        <p>Falsch angesagt: (ang. - gew.) * -10 Pkt.</p>
+        <p>Falsch angesagt: Abweichung * -10 Pkt.</p>
         <hr style="border-color: #666; margin: 5px 0;">
         <p><strong>WICHTIG:</strong> Alle Bonuspunkte (gefangene Piraten, 14er etc.) und Wetten erhält man nur, wenn die Stichansage EXAKT getroffen wird!</p>
         <ul style="padding-left: 20px; font-size: 14px;">
@@ -178,7 +181,10 @@
     <div class="opponents-row">
         <div *ngFor="let p of opponents" class="opponent" [class.active-turn]="p.isTurn">
             <div class="avatar">{{ p.name.charAt(0) }}</div>
-            <div class="name">{{ p.name }}</div>
+            <div class="name">
+                {{ p.name }}
+                <span *ngIf="p.isTurn && turnRemainingSecs !== null" class="turn-timer">({{ turnRemainingSecs }}s)</span>
+            </div>
             <div class="stats">
                 Bid: {{ p.bid !== null ? p.bid : '?' }} | Won: {{ p.tricksWon }}
             </div>
@@ -210,10 +216,11 @@
         <!-- Bidding UI -->
         <div *ngIf="gameState.phase === 'bidding' && gameState.me.bid === null" class="bidding-overlay">
             <h3>Wieviele Stiche machst du?</h3>
+            <p class="bid-range">Erlaubt: 0 bis {{ getMaxBid() }}</p>
             <div class="bid-controls">
                 <button (click)="bidInput = bidInput - 1" [disabled]="bidInput <= 0">-</button>
                 <span class="bid-value">{{ bidInput }}</span>
-                <button (click)="bidInput = bidInput + 1" [disabled]="bidInput >= gameState.round">+</button>
+                <button (click)="bidInput = bidInput + 1" [disabled]="bidInput >= getMaxBid()">+</button>
             </div>
             <button (click)="submitBid()" class="btn-bid">Yo-Ho-Ho!</button>
         </div>
@@ -363,7 +370,7 @@
 <div class="overlay" *ngIf="showBahijModal">
     <div class="modal pirate-modal bahij-modal">
         <h2>Bahij the Bandit</h2>
-        <p>Wähle 2 Karten aus deiner restlichen Hand, die du abwerfen möchtest:</p>
+        <p>Du hast 2 Karten vom Ablagestapel genommen. Wähle jetzt 2 Karten aus deiner Hand, die du abwerfen möchtest:</p>
         <div class="bahij-hand">
              <div *ngFor="let card of gameState?.hand; let i = index" 
                   class="hand-card-container bahij-card"
@@ -409,15 +416,17 @@
 <div class="overlay" *ngIf="showTortugaModal">
     <div class="modal pirate-modal tortuga-modal" style="max-width: 95vw; max-height: 95vh; display: flex; flex-direction: column;">
         <h2>Tortuga Jack</h2>
-        <p>Das sind die restlichen Karten im Stapel, die in dieser Runde nicht ausgebeilt wurden.</p>
+        <p>Hier siehst du alle Karten, die in dieser Runde nicht ausgegeben wurden. Reihenfolge bleibt unverändert ({{ tortugaDeck.length }} Karten).</p>
         <div class="tortuga-card-grid">
-            <div *ngFor="let card of tortugaDeck" class="peek-card">
+            <div *ngFor="let card of tortugaDeck; let i = index" class="peek-card">
+                <span class="order-badge">#{{ i + 1 }}</span>
                 <app-card [card]="card" size="md"></app-card>
             </div>
         </div>
-        <button class="btn-confirm" style="align-self: center; margin-top: 20px;" (click)="submitTortugaAction()">
+        <button *ngIf="canSubmitTortugaAction" class="btn-confirm" style="align-self: center; margin-top: 20px;" (click)="submitTortugaAction()">
             Ansehen beenden
         </button>
+        <p *ngIf="!canSubmitTortugaAction" style="text-align: center; margin-top: 16px;">Wird automatisch geschlossen...</p>
     </div>
 </div>
 <!-- Removing Tortuga Jack Modal (Now integrated into the table UI) -->

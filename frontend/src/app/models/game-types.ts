@@ -21,6 +21,8 @@ export interface GameState {
     roomId: string;
     round: number;
     maxRounds: number;
+    cardsThisRound?: number;
+    gameMode?: { id: string; name: string };
     phase: 'lobby' | 'bidding' | 'playing' | 'roundSummary' | 'finished' | 'pirate_action';
     hand: Card[];
     currentTrick: { playerId: string; card: Card; playedAs?: string }[];
@@ -28,5 +30,6 @@ export interface GameState {
     players: Player[];
     lastWinnerId: string | null;
     turnIndex: number;
+    turnDeadline?: number | null;
     pirateActionData?: any;
 }

@@ -19,21 +19,44 @@ app.use(express.json());
 // ─── Game Management ──────────────────────────────────────────────────────────
 const games = new Map(); // Map<roomId, GameInstance>
 
+function getOpenRooms() {
+    return [...games.values()]
+        .map(game => game.getPublicRoomInfo())
+        .filter(room => room.canJoin)
+        .sort((a, b) => b.createdAt - a.createdAt);
+}
+
 // ─── REST API ─────────────────────────────────────────────────────────────────
 app.post('/api/rooms', (req, res) => {
   const id = crypto.randomBytes(4).toString('hex');
-  const game = new Game(id, io);
+  const requestedModeId = (req.body?.gameModeId ?? '').toString().trim().toLowerCase();
+  const gameModeId = Game.isValidGameMode(requestedModeId)
+      ? requestedModeId
+      : Game.getDefaultGameModeId();
+    const ruleSettings = Game.normalizeRuleSettings(req.body?.ruleSettings);
+    const game = new Game(id, io, { gameModeId, ruleSettings });
   
   // Optional: Bot Configuration
   if (req.body.withBots && req.body.botCount > 0) {
       game.addBots(req.body.botCount, req.body.difficulty || 'medium');
-      console.log(`[Game ${id}] created with ${req.body.botCount} bots (${req.body.difficulty})`);
+      console.log(`[Game ${id}] created with mode=${gameModeId}, bots=${req.body.botCount}, rules=${JSON.stringify(ruleSettings)}`);
   } else {
-      console.log(`[Game ${id}] created`);
+      console.log(`[Game ${id}] created with mode=${gameModeId}, rules=${JSON.stringify(ruleSettings)}`);
   }
   
   games.set(id, game);
-  res.status(201).json({ roomId: id });
+  res.status(201).json({ roomId: id, gameModeId, ruleSettings });
+});
+
+app.get('/api/game-modes', (_req, res) => {
+    res.json({
+        defaultGameModeId: Game.getDefaultGameModeId(),
+        modes: Game.getAvailableGameModes()
+    });
+});
+
+app.get('/api/rooms', (_req, res) => {
+    res.json(getOpenRooms());
 });
 
 app.get('/api/rooms/:id', (req, res) => {
@@ -68,6 +91,28 @@ app.get('/api/leaderboard', (req, res) => {
     res.json(userManager.getLeaderboard());
 });
 
+app.get('/api/account/:username', (req, res) => {
+    const username = req.params.username;
+    if (!username) return res.status(400).json({ error: 'Username erforderlich' });
+
+    const result = userManager.getAccount(username);
+    if (!result.success) return res.status(404).json({ error: result.message });
+    res.json(result.account);
+});
+
+app.post('/api/account/update', (req, res) => {
+    const { username, password, newUsername, newPassword } = req.body;
+    if (!username || !password) return res.status(400).json({ error: 'Username und Passwort erforderlich' });
+    if (!newUsername && !newPassword) return res.status(400).json({ error: 'Keine Änderungen angegeben' });
+
+    const result = userManager.updateAccount(username, password, { newUsername, newPassword });
+    if (!result.success) {
+        const status = result.code === 'unauthorized' ? 401 : 400;
+        return res.status(status).json({ error: result.message });
+    }
+    res.json({ success: true, username: result.username });
+});
+
 // ─── Socket.io ────────────────────────────────────────────────────────────────
 io.on('connection', (socket) => {
   console.log(`[Socket] connected: ${socket.id}`);
@@ -83,22 +128,42 @@ io.on('connection', (socket) => {
       return;
     }
 
+    playerName = (playerName ?? '').toString().trim();
+    if (playerName.length < 2 || playerName.length > 20) {
+        socket.emit('errorNotification', 'Name muss zwischen 2 und 20 Zeichen lang sein.');
+        return;
+    }
+
     if (isGuest && userManager.isNameRegistered(playerName)) {
         console.log(`[Join Failed] Guest Name Registered: ${playerName}`);
         socket.emit('errorNotification', 'Dieser Name ist registriert. Bitte wähle einen anderen Namen oder logge dich ein.');
         return;
     }
 
-    // Spieler hinzufügen
-    if (game.addPlayer(socket.id, playerName)) {
+    const joinResult = game.addHumanPlayer(socket.id, playerName, true);
+
+    if (joinResult.success) {
         socket.join(roomId);
         console.log(`[Game ${roomId}] ${playerName} joined successfully`);
+
+        if (joinResult.replacedBot) {
+            io.in(roomId).emit('notification', `${playerName} ersetzt ${joinResult.replacedBotName}.`);
+        }
         
         // Allen den neuen Status senden
         game.emitState();
     } else {
-        console.log(`[Join Failed] Game addPlayer rejected: ${playerName} (Full or Started)`);
-        socket.emit('errorNotification', 'Room full or game already started');
+        const errorMap = {
+            invalid_name: 'Ungültiger Name.',
+            name_taken: 'Dieser Name ist in diesem Raum bereits vergeben.',
+            room_full: 'Raum ist voll.',
+            game_started: 'Spiel läuft bereits.',
+            no_bot_to_replace: 'Spiel läuft bereits und es gibt keinen Bot zum Ersetzen.',
+            game_finished: 'Spiel ist bereits beendet.'
+        };
+        const message = errorMap[joinResult.reason] || 'Beitritt nicht möglich.';
+        console.log(`[Join Failed] ${playerName}: ${joinResult.reason}`);
+        socket.emit('errorNotification', message);
     }
   });
 

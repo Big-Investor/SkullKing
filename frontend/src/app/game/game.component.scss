@@ -69,6 +69,17 @@ $hover-accent: #f1cf5b;
         display: flex;
         align-items: center;
         gap: 15px;
+
+        .mode-caption {
+            color: #d8c7aa;
+            font-size: 0.82rem;
+            letter-spacing: 0.5px;
+            padding: 3px 8px;
+            border: 1px solid rgba(139, 107, 67, 0.75);
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.35);
+            white-space: nowrap;
+        }
     }
     
     h2 { 
@@ -407,7 +418,26 @@ $hover-accent: #f1cf5b;
             }
             
             .peek-card {
+                position: relative;
                 transition: transform 0.2s;
+
+                .order-badge {
+                    position: absolute;
+                    top: -8px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    z-index: 12;
+                    background: rgba(0, 0, 0, 0.85);
+                    color: $accent;
+                    border: 1px solid rgba(241, 207, 91, 0.55);
+                    border-radius: 10px;
+                    padding: 1px 7px;
+                    font-size: 0.72rem;
+                    font-weight: 700;
+                    letter-spacing: 0.3px;
+                    pointer-events: none;
+                }
+
                 &:hover {
                     transform: scale(1.1) translateY(-5px);
                     z-index: 10;
@@ -600,6 +630,13 @@ $hover-accent: #f1cf5b;
             color: $accent;
             letter-spacing: 2px;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+
+        .bid-range {
+            margin: -4px 0 8px;
+            color: #d8c7aa;
+            font-size: 0.95rem;
+            letter-spacing: 0.4px;
         }
 
         .bid-controls {
@@ -1168,3 +1205,6 @@ $hover-accent: #f1cf5b;
         border-color: #a5d6a7;
     }
 }
+
+.turn-timer { color: #ff4444; font-size: 0.9em; font-weight: bold; }
+
