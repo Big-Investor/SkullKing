@@ -630,3 +630,119 @@ button.btn-ghost {
     padding: 0.35rem 0.6rem !important;
     line-height: 1.2;
 }
+
+@media (max-width: 768px) {
+    .home {
+        align-items: flex-start;
+        padding: 0.7rem;
+    }
+
+    .card {
+        max-width: 100%;
+        padding: 1rem;
+        gap: 0.9rem;
+        border-radius: 12px;
+    }
+
+    .logo {
+        .skull {
+            font-size: 2.2rem;
+            margin-bottom: 0.2rem;
+        }
+
+        h1 {
+            font-size: 2rem;
+            letter-spacing: 1.5px;
+        }
+
+        .decorative-line {
+            width: 80%;
+        }
+    }
+
+    .tabs {
+        margin-bottom: 1rem;
+
+        .tab-btn {
+            font-size: 1rem;
+            padding: 9px 6px;
+        }
+    }
+
+    .subtitle {
+        font-size: 0.95rem;
+        margin-bottom: 1rem;
+    }
+
+    .mode-options,
+    .rule-options,
+    .bot-options,
+    .open-rooms-panel {
+        padding: 0.7rem;
+        margin: 0.35rem 0 0.8rem;
+    }
+
+    .join-row {
+        flex-direction: column;
+
+        .btn-ghost {
+            width: 100%;
+        }
+    }
+
+    .open-room-item {
+        align-items: flex-start;
+        gap: 0.4rem;
+
+        .btn-ghost {
+            align-self: flex-end;
+        }
+    }
+
+    .room-meta {
+        white-space: normal;
+        overflow: visible;
+    }
+
+    button.btn-primary {
+        font-size: 1.15rem;
+        padding: 10px;
+    }
+}
+
+@media (max-width: 420px) {
+    .home {
+        padding: 0.45rem;
+    }
+
+    .card {
+        padding: 0.75rem;
+        gap: 0.7rem;
+    }
+
+    .logo h1 {
+        font-size: 1.7rem;
+        letter-spacing: 1px;
+    }
+
+    .tabs .tab-btn {
+        font-size: 0.92rem;
+        padding: 8px 4px;
+    }
+
+    .mode-options,
+    .rule-options,
+    .bot-options,
+    .open-rooms-panel {
+        padding: 0.55rem;
+    }
+
+    .room-id {
+        font-size: 0.95rem;
+    }
+
+    .room-mode,
+    .room-meta {
+        font-size: 0.76rem;
+    }
+}
